@@ -1,29 +1,18 @@
 Attribute VB_Name = "DailyInventory"
 Sub DailyInventory()
-    'GET FILE PATH FROM THE USER
-    'Dim diaFolder As FileDialog
-    ' Open the file dialog
-    'Set diaFolder = Application.FileDialog(msoFileDialogFolderPicker)
-   ' diaFolder.AllowMultiSelect = False
-    'diaFolder.Show
-    
     Dim file As Variant, path As String
     Dim fileNames As New Collection
-
-    Dim prodInfo As String
-    
-    'Get file names of excel files
-    'path = diaFolder.SelectedItems(1) & "\"
+    Dim productInformationSheet As String
     Dim username As String
-    username = (Environ$("Username"))
     
+    username = (Environ$("Username"))
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
-    'Set diaFolder = Nothing
     file = Dir(path)
     
+    'get each file in the folder and store into collection
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
-            prodInfo = file
+            productInformationSheet = file
         Else
             fileNames.Add file
         End If
@@ -85,8 +74,8 @@ Sub DailyInventory()
 '***********************************************************************************
 'ADD SHIPBY DATE, AX# AND PROD8
     Dim wkbProdInfo As Workbook, shtProdInfoData As Worksheet, shtProdInfoDate As Worksheet
-    prodInfo = "ProductInformation.xlsm"
-    Set wkbProdInfo = Workbooks.Open(path & prodInfo)
+    productInformationSheet = "ProductInformation.xlsm"
+    Set wkbProdInfo = Workbooks.Open(path & productInformationSheet)
     Set shtProdInfoData = wkbProdInfo.Sheets("Data")
     Set shtProdInfoDate = wkbProdInfo.Sheets("ShipBy")
     
@@ -260,6 +249,8 @@ default:
     
     'close the prodinfo workbook
     wkbProdInfo.Close (False)
+    Set wkbProdInfo = Nothing
+    Set wkbGet = Nothing
     
     'create table with dates
     DailyInventoryTableDates
