@@ -57,7 +57,7 @@ Private Sub DeleteReports()
 End Sub
 
 Private Function DownloadReports() As Boolean
-    Dim Item As Outlook.MailItem 'used for individual emails
+    Dim Item As Outlook.MailItem
     Dim myNameSpace As Outlook.NameSpace
     Dim myInbox As Outlook.folder
     Dim reportFolder As Outlook.folder
@@ -66,53 +66,36 @@ Private Function DownloadReports() As Boolean
     Set myInbox = myNameSpace.GetDefaultFolder(olFolderInbox)
     Set reportFolder = myInbox.Folders("Inventory Reports Macro")
     
-    'if false will download everything in InventoryReports folder
-    'if true then will only download reports from today
-    Dim todayDateToggle As Boolean
-    todayDateToggle = False
+    'subject and sender of email and variable to store attachments in
+    Dim subject As String, sender As String, attachments As Outlook.attachments
     
-    'information to determine what the email is and when it was received
-    Dim subject As String, sender As String, dateReceived As String
+    'number of reports downloaded, number of attachments for an email, number of city reports downloaded
+    Dim numDownloaded As Integer, attachmentCount As Long, cityCount As Integer
     
-    Dim attach As Outlook.Attachments
-    Dim saveFolder As String
-    Dim username As String
+    'i used to count through attachments, fileNameLength is helper variable to determine file type, theFileType
+    'gets the fileType of the attachment
+    Dim i As Integer, fileNameLength As Long, theFileType As String
+    
+    'saveFolder is where reports will be saved, username gets the system username, fileName gets the report name
+    'filepath will have the folder, name of the report, and other information concatenated to save the report
+    Dim saveFolder As String, username As String, fileName As String, filepath As String
+    
     username = (Environ$("Username"))
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
-    Dim filepath As String, fileName As String, foundFolder As Boolean
-    Dim aCount As Long, i As Integer, cityCount As Integer, j As Long, fType As String
-    Dim recMonth As String, recDay As String, newHoll As Boolean, numDownloaded As Integer
-    
-    'cityCount counts how many city brewery reports have been saved so it can make
-    'each file a unique name
+    'cityCount counts how many city brewery reports have been saved so it can make each filename unique
     cityCount = 1
+    'count how many reports downloaded
     numDownloaded = 0
     
     For Each Item In reportFolder.items
         'if it is an email, then get its data
         If Item.Class = olMail Then
-            newHoll = False
             'GET EMAIL INFO
             'subject line of email
             subject = Item.subject
-            'when email received
-            dateReceived = Item.ReceivedTime
-            recMonth = month(dateReceived)
-            recDay = day(dateReceived)
             'original sender
             sender = Item.SenderEmailAddress
-                        
-            If todayDateToggle Then
-                'make sure it is a report from today
-                'if not then skip downloading report
-                If recMonth <> month(Today) Then
-                    GoTo notToday
-                    If recDay <> day(Today) Then
-                        GoTo notToday
-                    End If
-                End If
-            End If
                         
             'IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
@@ -121,47 +104,43 @@ Private Function DownloadReports() As Boolean
                 exportToExcel Item, saveFolder
                 numDownloaded = numDownloaded + 1
                 newHoll = True
-            End If
-                        
             'if not New Holland then get the attachments
-            If newHoll = False Then
+            Else
                 'SAVE ATTACHMENTS
-                Set attach = Item.Attachments
-                aCount = attach.Count
+                Set attachments = Item.attachments
+                attachmentCount = attachments.Count
                 'if attachments exist
-                For i = aCount To 1 Step -1
+                For i = attachmentCount To 1 Step -1
                     'get first filename attached to email
-                    filepath = attach.Item(i).fileName
+                    filepath = attachments.Item(i).fileName
                     'get the length up until a period
-                    j = InStrRev(filepath, ".")
+                    fileNameLength = InStrRev(filepath, ".")
                     'make a substring that is the fileType and the fileName without type
-                    fType = Right(filepath, Len(filepath) - j)
-                    fileName = Left(filepath, j - 1)
+                    theFileType = Right(filepath, Len(filepath) - fileNameLength)
+                    fileName = Left(filepath, fileNameLength - 1)
                     'only save the attachment if it is an excel file
-                    If fType = "xls" Or fType = "xlsx" Then
+                    If theFileType = "xls" Or theFileType = "xlsx" Then
                         'if a city brewery, then a number needs to be added to the end of the file
                         If InStr(1, filepath, "AGED FG") > 0 Then
-                            filepath = saveFolder & fileName & cityCount & "." & fType
+                            filepath = saveFolder & fileName & cityCount & "." & theFileType
                             cityCount = cityCount + 1
                         Else
                             filepath = saveFolder & filepath
                         End If
                         'save the attachment to the specified location
-                        attach.Item(i).SaveAsFile filepath
+                        attachments.Item(i).SaveAsFile filepath
                     End If
                 Next i
                 'increment number of reports downloaded
                 numDownloaded = numDownloaded + 1
             End If
-                        
         End If
-notToday:
     Next Item
 
     Set Item = Nothing
     Set reportFolder = Nothing
     
-    'set boolean for if there were reports downloaded
+    'set boolean for if reports downloaded
     If numDownloaded > 0 Then
         DownloadReports = True
         Exit Function
