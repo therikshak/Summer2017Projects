@@ -23,46 +23,6 @@ Public Sub completeDailyInventory()
     moveOld
 End Sub
 
-'create the inventory report
-Private Sub CreatePivot()
-    Dim xlApp As Excel.Application
-    Dim xlWb As Workbook, xlWs As Object, wlWb2 As Workbook
-    Dim username As String
-    username = (Environ$("Username"))
-    
-    'start a new instance of excel
-    Set xlApp = New Excel.Application
-    Set xlwb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
-    Set xlWb = xlApp.Workbooks.Add
-    Set xlWs = xlWb.Sheets(1)
-    
-    'get today's date
-    Dim todayDate As Date, m As String, d As String, y As String
-    todayDate = DateValue(Date)
-    m = month(todayDate)
-    d = day(todayDate)
-    y = year(todayDate)
-    
-    'filename for inventory report to be saved as
-    Dim fileName As String
-    fileName = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\" & m & "_" & d & "_" & y & "_" & "InventoryReport.xlsx"
-
-    'don't visibly open excel
-    xlApp.Visible = False
-    'run the inventory macro from the PERSONAL workbook
-    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory.DailyInventory"
-    
-    'save the excel file and close
-    xlWb.SaveAs fileName
-    xlWb.Close
-    xlwb2.Close
-    xlApp.Quit
-    
-    Set xlApp = Nothing
-    Set xlWb = Nothing
-    Set xlWs = Nothing
-    Set xlwb2 = Nothing
-End Sub
 
 'delete the old reports
 Private Sub DeleteReports()
@@ -72,11 +32,20 @@ Private Sub DeleteReports()
     'path to the folder
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
+    Dim todayDate As Date, m As String, d As String, y As String, combinedDate As String
+    todayDate = DateValue(Date)
+    m = month(todayDate)
+    d = day(todayDate)
+    y = year(todayDate)
+    combinedDate = (m & "_" & d & "_" & y)
+
     file = Dir(path)
     'loop through all files in folder
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
-            'skip the file
+            'skip the product information file
+        ElseIf InStr(1, file, combinedDate) > 0 Then
+            'skip deleting report if it is today's and macro was run again
         Else
             'delete the file
             Kill path & file
@@ -266,9 +235,49 @@ Private Sub moveOld()
 
 End Sub
 
+'create the inventory report
+Private Sub CreatePivot()
+    Dim xlApp As Excel.Application
+    Dim xlWb As Workbook, xlWs As Object, wlWb2 As Workbook
+    Dim username As String
+    username = (Environ$("Username"))
+    
+    'start a new instance of excel
+    Set xlApp = New Excel.Application
+    Set xlwb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
+    Set xlWb = xlApp.Workbooks.Add
+    Set xlWs = xlWb.Sheets(1)
+    
+    'get today's date
+    Dim todayDate As Date, m As String, d As String, y As String
+    todayDate = DateValue(Date)
+    m = month(todayDate)
+    d = day(todayDate)
+    y = year(todayDate)
+    
+    'filename for inventory report to be saved as
+    Dim fileName As String
+    fileName = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\" & m & "_" & d & "_" & y & "_" & "InventoryReport.xlsx"
+
+    'don't visibly open excel
+    xlApp.Visible = False
+    'run the inventory macro from the PERSONAL workbook
+    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory.DailyInventory"
+    
+    'save the excel file and close
+    xlWb.SaveAs fileName
+    xlWb.Close
+    xlwb2.Close
+    xlApp.Quit
+    
+    Set xlApp = Nothing
+    Set xlWb = Nothing
+    Set xlWs = Nothing
+    Set xlwb2 = Nothing
+End Sub
 
 Private Sub Application_Startup()
-  CreateAppointment
+  'CreateAppointment
 End Sub
 
 Private Sub Application_Reminder(ByVal Item As Object)
@@ -312,7 +321,7 @@ Public Sub CreateAppointment()
 Dim objAppointment As Outlook.AppointmentItem
 Dim tDate As Date
 ' Using a 1 min reminder so 6  = reminder fires at 5 min.
-tDate = Now() + 6 / 1440
+tDate = Now() + 2 / 1440
 
 Set objAppointment = Application.CreateItem(olAppointmentItem)
       With objAppointment
