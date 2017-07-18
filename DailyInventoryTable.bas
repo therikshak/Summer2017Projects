@@ -56,6 +56,8 @@ Sub DailyInventory()
             brewDetroit
         ElseIf InStr(1, fileNames(i), "Lindner") > 0 Then
             Lindner
+        ElseIf InStr(1, fileNames(i), "InventoryReport") > 0 Then
+            'do nothing
         Else
             vermont
         End If
