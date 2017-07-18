@@ -183,7 +183,14 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     Next
     
     'save the excel file
+    xlWb.Application.DisplayAlerts = False
+    Application.DisplayAlerts = False
+    
     xlWb.SaveAs filepath
+    
+    xlWb.Application.DisplayAlerts = True
+    Application.DisplayAlerts = True
+    
     xlWb.Close
     xlApp.Quit
     

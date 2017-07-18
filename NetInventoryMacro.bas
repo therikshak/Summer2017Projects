@@ -6,15 +6,53 @@ Public Sub NetInventory()
         ' purchase orders'
         ' vbs copy paste
         
-    ' open all of the excel files and store each one into a variable to reference
+    ' store path to folder containing files
+    Dim username As String, path As String
+    username = (Environ$("Username"))
+    path = "C:\Users\" & username & "\Desktop\AX_Export\"
     
-    ' in this report, columns will be:
+    ' Setup variables for different workbooks and sheets
+    Dim shtMasterModesto As Worksheet, shtMasterJoliet As Worksheet
+    Dim wkbInventory As Workbook, shtInventory As Worksheet
+    Dim wkbTransferOrder As Workbook, shtTransferOrder As Worksheet
+    Dim wkbPurchaseOrder As Workbook, shtPurchaseOrder As Worksheet
+    Dim wkbVbs As Workbook, shtVbs As Worksheet
+    
+    ' Assign sheet for Modesto and Joliet
+    Sheets.Add Before:=ActiveSheet
+    ActiveSheet.Name = "Modesto"
+    Set shtMasterModesto = Worksheets("Modesto")
+    Set shtMasterJoliet = Worksheets(2)
+    shtMasterJoliet.Name = "Joliet"
+    
+    ' in this report, column headers will be:
     '   A   B    C       D           E                 F            G  H       I           J
-    ' Plant|AX|Prod8|Description|Quantity(vbs)|quantity(inv report)|PO|TO|Total_projected|Diff
+    ' Plant|AX|Prod8|Description|Quantity(vbs)|Inventory|PO|TO|Total_projected|Diff
         ' total_projected = TO + PO + quantity(inv report)
         ' diff = total_projected - quanity(vbs)
     
-    ' two sheets, one for modesto and one for joliet, repeat below for both sheets
+    shtMasterModesto.Range("A1") = "Plant"
+    shtMasterModesto.Range("B1") = "AX #"
+    shtMasterModesto.Range("C1") = "Prod 8"
+    shtMasterModesto.Range("D1") = "Description"
+    shtMasterModesto.Range("E1") = "Quantity(vbs)"
+    shtMasterModesto.Range("F1") = "Inventory"
+    shtMasterModesto.Range("G1") = "PO"
+    shtMasterModesto.Range("H1") = "TO"
+    shtMasterModesto.Range("I1") = "Total_Projected"
+    shtMasterModesto.Range("J1") = "Difference"
+    
+    shtMasterJoliet.Range("A1") = "Plant"
+    shtMasterJoliet.Range("B1") = "AX #"
+    shtMasterJoliet.Range("C1") = "Prod 8"
+    shtMasterJoliet.Range("D1") = "Description"
+    shtMasterJoliet.Range("E1") = "Quantity(vbs)"
+    shtMasterJoliet.Range("F1") = "Inventory"
+    shtMasterJoliet.Range("G1") = "PO"
+    shtMasterJoliet.Range("H1") = "TO"
+    shtMasterJoliet.Range("I1") = "Total_Projected"
+    shtMasterJoliet.Range("J1") = "Difference"
+
     
     ' Step 1: Move data from vbs to this sheet
         ' leave off barrels
