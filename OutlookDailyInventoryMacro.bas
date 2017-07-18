@@ -251,7 +251,12 @@ Private Sub CreatePivot()
     xlWb.Application.Run "PERSONAL.XLSB!DailyInventory.DailyInventory"
     
     'save the excel file and close
+    xlWb.Application.DisplayAlerts = False
+    Application.DisplayAlerts = False
     xlWb.SaveAs fileName
+    xlWb.Application.DisplayAlerts = True
+    Application.DisplayAlerts = True                                                                                       
+                                                                                            
     xlWb.Close
     xlwb2.Close
     xlApp.Quit
