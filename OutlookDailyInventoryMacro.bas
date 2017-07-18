@@ -184,12 +184,8 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     
     'save the excel file
     xlWb.Application.DisplayAlerts = False
-    Application.DisplayAlerts = False
-    
     xlWb.SaveAs filepath
-    
     xlWb.Application.DisplayAlerts = True
-    Application.DisplayAlerts = True
     
     xlWb.Close
     xlApp.Quit
@@ -252,10 +248,8 @@ Private Sub CreatePivot()
     
     'save the excel file and close
     xlWb.Application.DisplayAlerts = False
-    Application.DisplayAlerts = False
     xlWb.SaveAs fileName
-    xlWb.Application.DisplayAlerts = True
-    Application.DisplayAlerts = True                                                                                       
+    xlWb.Application.DisplayAlerts = True                                                                                       
                                                                                             
     xlWb.Close
     xlwb2.Close
