@@ -83,37 +83,38 @@ Public Sub NetInventory()
         ' below goes into column F:
         ' iferror(vlookup(B#,dailyinventory sheet( Range C2:D end of table), 2 (units), 0) , value if true = 0)
         ' after getting units, do an index match to put ax numbers in
-    Dim lastRow
+    Dim lastRow As Integer
     Dim invReportName As String
     Dim todayDate As Date, m As String, d As String, y As String
     todayDate = DateValue(Date)
     m = Month(todayDate)
     d = Day(todayDate)
     y = Year(todayDate)
-    invReportName = m & "_" & d & "_" & y & "_InventoryReport"
+    invReportName = m & "_" & d & "_" & y & "_InventoryReport.xlsx"
     
     Set wkbInventory = Workbooks.Open(path & invReportName)
     Set shtInventory = wkbInventory.Sheets("Daily Inventory")
+    lastRow = shtMasterJoliet.Cells(Rows.Count, 3).End(xlUp).Row
     
     ' filter by joliet and perform vlookup
     shtInventory.ListObjects("Table2").Range.AutoFilter Field:=1, Criteria1:="Joliet"
-    shtMasterJoliet.Range("F2") = shtInventory.Application.WorksheetFunction.IfError( _
-        shtInventory.Application.WorksheetFunction.VLookup(shtMasterJoliet.Cells(2, 3), shtInventory.Columns("C:D"), _
-            2, 0), 0)
+    shtMasterJoliet.Range("F2").Formula = "=IfError(VLOOKUP($C2,'[" & invReportName & "]Daily Inventory'!$C:$D,2,0), 0)"
     ' autofill the vlookup
-    lastRow = shtInventory.Cells(Rows.Count, 3).End(xlUp).Row
-    shtMasterJoliet.Range("F2").AutoFill Destination:=shtMasterJoliet.Range("F2:D" & lastRow)
+    shtMasterJoliet.Range("F2:F" & lastRow).FillDown
+    
+    ' index match for ax numbers
+    shtMasterJoliet.Range("B2").Formula = "=INDEX('[" & invReportName & "]Daily Inventory'!$B:$B, MATCH($C2, '[" _
+        & invReportName & "]Daily Inventory'!$C:$C, 0))"
+    ' autofill down
+    shtMasterJoliet.Range("B2:B" & lastRow).FillDown
             
     ' filter by modesto and perform vlookup
     shtInventory.ListObjects("Table2").Range.AutoFilter Field:=1, Criteria1:="Modesto"
-    shtMasterModesto.Range("F2") = shtInventory.Application.WorksheetFunction.IfError( _
-        shtInventory.Application.WorksheetFunction.VLookup(shtMasterModesto.Cells(2, 3), shtInventory.Columns("C:D"), _
-            2, 0), 0)
+    shtMasterModesto.Range("F2").Formula = "=IfError(VLOOKUP($C2,'[" & invReportName & "]Daily Inventory'!$C:$D,2,0), 0)"
     ' autofill the vlookup
-    lastRow = shtInventory.Cells(Rows.Count, 3).End(xlUp).Row
-    shtMasterModesto.Range("F2").AutoFill Destination:=shtMasterModesto.Range("F2:D" & lastRow)
-    
-    ' perform index match to put in ax numbers
+    shtMasterModesto.Range("F2:F" & lastRow).FillDown
+    ' copy ax numbers from joliet sheet
+    shtMasterJoliet.Range("B2:B" & lastRow).Copy Destination:=shtMasterModesto.Cells(2, "B")
     
 '**************************************************************************************************************
     ' Step 3: Get the quantity from PO csv
@@ -137,15 +138,6 @@ Public Sub NetInventory()
         
     ' Save report
     ' set each variable to nothing
-    shtMasterModesto = Nothing
-    shtMasterJoliet = Nothing
-    wkbInventory = Nothing
-    shtInventory = Nothing
-    wkbTransferOrder = Nothing
-    shtTransferOrder = Nothing
-    wkbPurchaseOrder = Nothing
-    shtPurchaseOrder = Nothing
-    wkbVbs = Nothing
-    shtVbs = Nothing
+
     
 End Sub
