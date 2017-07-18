@@ -1,5 +1,20 @@
 Attribute VB_Name = "NetInventoryMacro"
 Public Sub NetInventory()
+    'Clear the existing workbook
+    Dim deleteSheet As Worksheet
+    For Each deleteSheet In ActiveWorkbook.Worksheets
+        If deleteSheet.Name = "Modesto" Then
+            deleteSheet.Delete
+        ElseIf deleteSheet.Name = "Joliet" Then
+            deleteSheet.Name = "Sheet 1"
+            deleteSheet.Cells.Clear
+        ElseIf deleteSheet.Name = "Sheet 1" Then
+            ' leave it be
+        Else
+            deleteSheet.Delete
+        End If
+    Next deleteSheet
+        
     ' put the following excel files into this folder
         ' daily inventory report
         ' transfer orders
@@ -20,7 +35,7 @@ Public Sub NetInventory()
     Dim wkbVbs As Workbook, shtVbs As Worksheet
     
     ' Assign sheet for Modesto and Joliet
-    Sheets.Add Before:=ActiveSheet
+    Sheets.Add After:=ActiveSheet
     ActiveSheet.Name = "Modesto"
     Set shtMasterModesto = Worksheets("Modesto")
     Set shtMasterJoliet = Worksheets(2)
@@ -96,25 +111,53 @@ Public Sub NetInventory()
     Set shtInventory = wkbInventory.Sheets("Daily Inventory")
     lastRow = shtMasterJoliet.Cells(Rows.Count, 3).End(xlUp).Row
     
-    ' filter by joliet and perform vlookup
-    shtInventory.ListObjects("Table2").Range.AutoFilter Field:=1, Criteria1:="Joliet"
-    shtMasterJoliet.Range("F2").Formula = "=IfError(VLOOKUP($C2,'[" & invReportName & "]Daily Inventory'!$C:$D,2,0), 0)"
-    ' autofill the vlookup
-    shtMasterJoliet.Range("F2:F" & lastRow).FillDown
+    ' iterate through and get the correct quantity given the brewery is correct
+    Dim prod8 As String, i As Integer, j As Integer, endRow As Integer
+    Dim foundJoliet As Boolean, foundModesto As Boolean
     
-    ' index match for ax numbers
-    shtMasterJoliet.Range("B2").Formula = "=INDEX('[" & invReportName & "]Daily Inventory'!$B:$B, MATCH($C2, '[" _
-        & invReportName & "]Daily Inventory'!$C:$C, 0))"
-    ' autofill down
-    shtMasterJoliet.Range("B2:B" & lastRow).FillDown
-            
-    ' filter by modesto and perform vlookup
-    shtInventory.ListObjects("Table2").Range.AutoFilter Field:=1, Criteria1:="Modesto"
-    shtMasterModesto.Range("F2").Formula = "=IfError(VLOOKUP($C2,'[" & invReportName & "]Daily Inventory'!$C:$D,2,0), 0)"
-    ' autofill the vlookup
-    shtMasterModesto.Range("F2:F" & lastRow).FillDown
-    ' copy ax numbers from joliet sheet
+    endRow = shtInventory.Cells(Rows.Count, 3).End(xlUp).Row
+    
+    ' iterate through each prod8 in new report
+    For i = 2 To lastRow
+        shtMasterJoliet.Cells(i, "A").Value = "Distribution Center 1"
+        shtMasterModesto.Cells(i, "A").Value = "Distribution Center 1"
+        prod8 = shtMasterJoliet.Cells(i, "C").Value
+        foundJoliet = False
+        foundModesto = False
+        ' iterate through each row of inventory report and search for prod8
+        For j = 2 To endRow
+            'first check if the prod8's match
+            If StrComp(shtInventory.Cells(j, "C").Value, prod8) = 0 Then
+                'then check to see which brewery
+                If StrComp(shtInventory.Cells(j, "A").Value, "Joliet") = 0 Then
+                    ' if so, copy over the units and ax number to the new report
+                    shtMasterJoliet.Cells(i, "F").Value = shtInventory.Cells(j, "D").Value
+                    shtMasterJoliet.Cells(i, "B").Value = shtInventory.Cells(j, "B").Value
+                    foundJoliet = True
+                ElseIf StrComp(shtInventory.Cells(j, "A").Value, "Modesto") = 0 Then
+                    ' if so, copy over the units
+                    shtMasterModesto.Cells(i, "F").Value = shtInventory.Cells(j, "D").Value
+                    foundModesto = True
+                Else
+                    'continue looping
+                End If
+            End If
+            If foundModesto And foundJoliet Then j = endRow
+        Next j
+        ' if neither was found in the inventory report than mark units as 0 and ax as N/A
+        If Not foundModesto Then
+            shtMasterModesto.Cells(i, "F").Value = 0
+        ElseIf Not foundJoliet Then
+            shtMasterJoliet.Cells(i, "F").Value = 0
+            shtMasterJoliet.Cells(i, "B").Value = "N/A"
+        End If
+    Next i
+
+    ' copy ax numbers from joliet sheet to modesto sheet
     shtMasterJoliet.Range("B2:B" & lastRow).Copy Destination:=shtMasterModesto.Cells(2, "B")
+    
+    'close the inventory report
+    wkbInventory.Close (False)
     
 '**************************************************************************************************************
     ' Step 3: Get the quantity from PO csv
@@ -132,10 +175,18 @@ Public Sub NetInventory()
         
     ' Step 5: sum columns
         ' H + G + F
+        shtMasterJoliet.Range("I2").Formula = "=$H2 + $G2 + $F2"
+        shtMasterJoliet.Range("I2:I").FillDown
         
+        shtMasterModesto.Range("I2").Formula = "=$H2 + $G2 + $F2"
+        shtMasterModesto.Range("I2:I").FillDown
     ' Step 6: calculate difference
         ' I - E
+        shtMasterJoliet.Range("J2").Formula = "=$I2-$E2"
+        shtMasterJoliet.Range("J2:J").FillDown
         
+        shtMasterModesto.Range("J2").Formula = "=$I2-$E2"
+        shtMasterModesto.Range("J2:J").FillDown
     ' Save report
     ' set each variable to nothing
 
