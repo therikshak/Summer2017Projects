@@ -1,7 +1,14 @@
 Attribute VB_Name = "NetInventoryMacro"
 Public Sub NetInventory()
+' put the following excel files into this folder
+        ' daily inventory report
+        ' transfer orders
+        ' purchase orders'
+        ' vbs copy paste
+        
     'Clear the existing workbook
     Dim deleteSheet As Worksheet
+    ActiveWorkbook.Application.DisplayAlerts = False
     For Each deleteSheet In ActiveWorkbook.Worksheets
         If deleteSheet.Name = "Modesto" Then
             deleteSheet.Delete
@@ -14,12 +21,7 @@ Public Sub NetInventory()
             deleteSheet.Delete
         End If
     Next deleteSheet
-        
-    ' put the following excel files into this folder
-        ' daily inventory report
-        ' transfer orders
-        ' purchase orders'
-        ' vbs copy paste
+    ActiveWorkbook.Application.DisplayAlerts = True
         
     ' store path to folder containing files
     Application.ScreenUpdating = False
@@ -178,10 +180,12 @@ Public Sub NetInventory()
                     axNum = shtProductInformation.Cells(j, "A").Value
                     shtMasterJoliet.Cells(i, "B") = axNum
                     shtMasterModesto.Cells(i, "B") = axNum
-                    GoTo breakJLoop
+                    shtMasterJoliet.Cells(i, "F").Value = 0
+                    shtMasterModesto.Cells(i, "F").Value = 0
+                    GoTo foundAX
                 End If
             Next j
-breakJLoop:
+foundAX:
         End If
     Next i
     
@@ -192,19 +196,25 @@ breakJLoop:
         ' column O is ax number
         ' column P is description
         ' column R is quantity
-    Dim purchaseOrderName As String
-    purchaseOrderName = "purchase_order.csv"
     
-    Set wkbPurchaseOrder = Workbooks.Open(path & purchaseOrderName)
+    Set wkbPurchaseOrder = Workbooks.Open(path & "purchase_order.csv")
     Set shtPurchaseOrder = wkbPurchaseOrder.Sheets("purchase_order")
     endRow = shtPurchaseOrder.Cells(Rows.Count, 3).End(xlUp).Row
-    ' iterate through each prod8 in new report
+    ' iterate through each item
     For i = 2 To lastRow
     axNum = shtMasterJoliet.Cells(i, "B").Text
         For j = 2 To endRow
-            'if strcomp(axNum, shtPurchaseOrder.Cells(
+            If StrComp(axNum, shtPurchaseOrder.Cells(j, "O")) = 0 Then
+                shtMasterJoliet.Cells(i, "G").Value = shtPurchaseOrder.Cells(j, "R").Value
+                shtMasterModesto.Cells(i, "G").Value = shtPurchaseOrder.Cells(j, "R").Value
+                GoTo foundPOAmount
+            End If
         Next j
+foundPOAmount:
     Next i
+    
+    ' close the workbook
+    wkbPurchaseOrder.Close (False)
 '**************************************************************************************************************
     ' Step 5: get the quantity from TO
         ' column J is ax number
@@ -213,24 +223,69 @@ breakJLoop:
         ' column N is quantity
     
     ' iterate through each prod8 in new report
+    Set wkbTransferOrder = Workbooks.Open(path & "inquiries_transfer_orders.xlsx")
+    Set shtTransferOrder = wkbTransferOrder.Sheets(1)
+    endRow = shtTransferOrder.Cells(Rows.Count, 3).End(xlUp).Row
+    ' iterate through each item
     For i = 2 To lastRow
-    
+    axNum = shtMasterJoliet.Cells(i, "B").Text
+        For j = 2 To endRow
+            If StrComp(axNum, shtTransferOrder.Cells(j, "J")) = 0 Then
+                shtMasterJoliet.Cells(i, "H").Value = shtTransferOrder.Cells(j, "N").Value
+                shtMasterModesto.Cells(i, "H").Value = shtTransferOrder.Cells(j, "N").Value
+                GoTo foundTOAmount
+            End If
+        Next j
+foundTOAmount:
     Next i
+    
+    ' close the workbook
+    wkbTransferOrder.Close (False)
 '**************************************************************************************************************
-    ' Step 6: sum columns
+    ' Step 6: fill blank transfer and purchase order columns with zeros
+        For i = 2 To lastRow
+            If IsEmpty(shtMasterJoliet.Cells(i, "G")) Then
+                shtMasterJoliet.Cells(i, "G").Value = 0
+                shtMasterModesto.Cells(i, "G").Value = 0
+            End If
+            
+            If IsEmpty(shtMasterJoliet.Cells(i, "H")) Then
+                shtMasterJoliet.Cells(i, "H").Value = 0
+                shtMasterModesto.Cells(i, "H").Value = 0
+            End If
+        Next i
+'**************************************************************************************************************
+    ' Step 7: sum columns
         ' H+ G + F
         shtMasterJoliet.Range("I2").Formula = "=$H2 + $G2 + $F2"
-        shtMasterJoliet.Range("I2:I").FillDown
+        shtMasterJoliet.Range("I2:I" & lastRow).FillDown
         
         shtMasterModesto.Range("I2").Formula = "=$H2 + $G2 + $F2"
-        shtMasterModesto.Range("I2:I").FillDown
+        shtMasterModesto.Range("I2:I" & lastRow).FillDown
         
 '**************************************************************************************************************
-    ' Step 7: calculate difference
+    ' Step 8: calculate difference
         ' I - E
         shtMasterJoliet.Range("J2").Formula = "=$I2-$E2"
-        shtMasterJoliet.Range("J2:J").FillDown
+        shtMasterJoliet.Range("J2:J" & lastRow).FillDown
         
         shtMasterModesto.Range("J2").Formula = "=$I2-$E2"
-        shtMasterModesto.Range("J2:J").FillDown
+        shtMasterModesto.Range("J2:J" & lastRow).FillDown
+    
+'**************************************************************************************************************
+    ' Step 9: Turn into table
+    ' Joliet
+    shtMasterJoliet.ListObjects.Add(xlSrcRange, shtMasterJoliet.Range("$A$1:$J$" & lastRow), , xlYes).Name = _
+        "Joliet_Table"
+    shtMasterJoliet.ListObjects("Joliet_Table").TableStyle = ""
+    ' Modesto
+    shtMasterModesto.ListObjects.Add(xlSrcRange, shtMasterModesto.Range("$A$1:$J$" & lastRow), , xlYes).Name = _
+        "Modesto_Table"
+    shtMasterModesto.ListObjects("Modesto_Table").TableStyle = ""
+    
+    ' format negative differences
+    Range("Joliet_Table[Difference]").NumberFormat = "0.00_);[Red](0.00)"
+    Range("Modesto_Table[Difference]").NumberFormat = "0.00_);[Red](0.00)"
+    
+    shtMasterJoliet.Activate
 End Sub
