@@ -284,8 +284,8 @@ foundTOAmount:
     shtMasterModesto.ListObjects("Modesto_Table").TableStyle = ""
     
     ' format negative differences
-    Range("Joliet_Table[Difference]").NumberFormat = "0.00_);[Red](0.00)"
-    Range("Modesto_Table[Difference]").NumberFormat = "0.00_);[Red](0.00)"
+    Range("Joliet_Table[Difference]").NumberFormat = "0_);[Red](0)"
+    Range("Modesto_Table[Difference]").NumberFormat = "0_);[Red](0)"
     
     shtMasterJoliet.Activate
 End Sub
