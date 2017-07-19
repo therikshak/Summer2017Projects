@@ -5,11 +5,11 @@ Public Sub NetInventory()
     For Each deleteSheet In ActiveWorkbook.Worksheets
         If deleteSheet.Name = "Modesto" Then
             deleteSheet.Delete
+        ElseIf deleteSheet.Name = "Sheet 1" Then
+            ' leave it be
         ElseIf deleteSheet.Name = "Joliet" Then
             deleteSheet.Name = "Sheet 1"
             deleteSheet.Cells.Clear
-        ElseIf deleteSheet.Name = "Sheet 1" Then
-            ' leave it be
         Else
             deleteSheet.Delete
         End If
@@ -33,16 +33,17 @@ Public Sub NetInventory()
     Dim wkbTransferOrder As Workbook, shtTransferOrder As Worksheet
     Dim wkbPurchaseOrder As Workbook, shtPurchaseOrder As Worksheet
     Dim wkbVbs As Workbook, shtVbs As Worksheet
+    Dim wkbProductInformation As Workbook, shtProductInformation As Worksheet
     
     ' Assign sheet for Modesto and Joliet
     Sheets.Add After:=ActiveSheet
     ActiveSheet.Name = "Modesto"
     Set shtMasterModesto = Worksheets("Modesto")
-    Set shtMasterJoliet = Worksheets(2)
+    Set shtMasterJoliet = Worksheets(1)
     shtMasterJoliet.Name = "Joliet"
     
     ' in this report, column headers will be:
-    '   A   B    C       D           E                 F            G  H       I           J
+    '   A   B    C       D           E             F     G  H       I           J
     ' Plant|AX|Prod8|Description|Quantity(vbs)|Inventory|PO|TO|Total_projected|Diff
         ' total_projected = TO + PO + quantity(inv report)
         ' diff = total_projected - quanity(vbs)
@@ -160,35 +161,76 @@ Public Sub NetInventory()
     wkbInventory.Close (False)
     
 '**************************************************************************************************************
-    ' Step 3: Get the quantity from PO csv
+    ' Step 3: Fill in missing Ax numbers
+    ' fill in any missing data using Product Information sheet
+    Dim axNum As String
+    Set wkbProductInformation = Workbooks.Open(path & "ProductInformation.xlsm")
+    Set shtProductInformation = wkbProductInformation.Sheets("Data")
+    endRow = shtProductInformation.Cells(Rows.Count, 1).End(xlUp).Row
+    
+    ' loop through report and if an ax number is blank, try to find it in the information sheet
+    For i = 2 To lastRow
+        If IsEmpty(shtMasterJoliet.Cells(i, "B")) Then
+            prod8 = shtMasterJoliet.Cells(i, "C").Value
+            For j = 2 To endRow
+                ' if the prod8 is found, get the ax number and break the j loop
+                If StrComp(prod8, shtProductInformation.Cells(j, "C").Value) = 0 Then
+                    axNum = shtProductInformation.Cells(j, "A").Value
+                    shtMasterJoliet.Cells(i, "B") = axNum
+                    shtMasterModesto.Cells(i, "B") = axNum
+                    GoTo breakJLoop
+                End If
+            Next j
+breakJLoop:
+        End If
+    Next i
+    
+    ' close product information workbook
+    wkbProductInformation.Close (False)
+'**************************************************************************************************************
+    ' Step 4: Get the quantity from PO csv
         ' column O is ax number
         ' column P is description
         ' column R is quantity
-        ' vlookup with ax number and return units, 0 if not found
-        
-    ' Step 4: get the quantity from TO
+    Dim purchaseOrderName As String
+    purchaseOrderName = "purchase_order.csv"
+    
+    Set wkbPurchaseOrder = Workbooks.Open(path & purchaseOrderName)
+    Set shtPurchaseOrder = wkbPurchaseOrder.Sheets("purchase_order")
+    endRow = shtPurchaseOrder.Cells(Rows.Count, 3).End(xlUp).Row
+    ' iterate through each prod8 in new report
+    For i = 2 To lastRow
+    axNum = shtMasterJoliet.Cells(i, "B").Text
+        For j = 2 To endRow
+            'if strcomp(axNum, shtPurchaseOrder.Cells(
+        Next j
+    Next i
+'**************************************************************************************************************
+    ' Step 5: get the quantity from TO
         ' column J is ax number
         ' column K is description
         ' column L is prod8
         ' column N is quantity
-        ' vlookup with ax number, return quantity, 0 if not found
-        
-    ' Step 5: sum columns
-        ' H + G + F
+    
+    ' iterate through each prod8 in new report
+    For i = 2 To lastRow
+    
+    Next i
+'**************************************************************************************************************
+    ' Step 6: sum columns
+        ' H+ G + F
         shtMasterJoliet.Range("I2").Formula = "=$H2 + $G2 + $F2"
         shtMasterJoliet.Range("I2:I").FillDown
         
         shtMasterModesto.Range("I2").Formula = "=$H2 + $G2 + $F2"
         shtMasterModesto.Range("I2:I").FillDown
-    ' Step 6: calculate difference
+        
+'**************************************************************************************************************
+    ' Step 7: calculate difference
         ' I - E
         shtMasterJoliet.Range("J2").Formula = "=$I2-$E2"
         shtMasterJoliet.Range("J2:J").FillDown
         
         shtMasterModesto.Range("J2").Formula = "=$I2-$E2"
         shtMasterModesto.Range("J2:J").FillDown
-    ' Save report
-    ' set each variable to nothing
-
-    
 End Sub
