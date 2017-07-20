@@ -41,6 +41,7 @@ Public Sub NetInventory()
     vbsFileName = Trim(content(1))
     transferOrderFileName = Trim(content(2))
     purchaseOrderFileName = Trim(content(3))
+    
     ' Setup variables for different workbooks and sheets
     Dim shtMasterModesto As Worksheet, shtMasterJoliet As Worksheet
     Dim wkbInventory As Workbook, shtInventory As Worksheet
@@ -303,5 +304,45 @@ foundTOAmount:
 End Sub
 
 Public Sub editFileNames()
-
+    Dim path As String, content As Variant
+    Dim vbsFileName As String, transferOrderFileName As String, purchaseOrderFileName As String
+    
+    MsgBox "Click on the excel file containing the data from VBS"
+    With Application.FileDialog(msoFileDialogOpen)
+        .AllowMultiSelect = False
+        .Show
+        If .SelectedItems.Count = 1 Then
+            path = .SelectedItems(1)
+            'split until \
+            content = Split(path, "\")
+            vbsFileName = Trim(content(UBound(content)))
+        End If
+    End With
+    
+    MsgBox "Click on the excel file containing the transfer order data"
+    With Application.FileDialog(msoFileDialogOpen)
+        .AllowMultiSelect = False
+        .Show
+        If .SelectedItems.Count = 1 Then
+            path = .SelectedItems(1)
+            'split until \
+            content = Split(path, "\")
+            transferOrderFileName = Trim(content(UBound(content)))
+        End If
+    End With
+    
+    MsgBox "Click on the csv file containing the purchase order data"
+    With Application.FileDialog(msoFileDialogOpen)
+        .AllowMultiSelect = False
+        .Show
+        If .SelectedItems.Count = 1 Then
+            path = .SelectedItems(1)
+            'split until \
+            content = Split(path, "\")
+            purchaseOrderFileName = Trim(content(UBound(content)))
+        End If
+    End With
+    
+    'edit the config sheet
+    '***********************************************
 End Sub
