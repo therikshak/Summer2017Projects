@@ -22,13 +22,25 @@ Public Sub NetInventory()
         End If
     Next deleteSheet
     ActiveWorkbook.Application.DisplayAlerts = True
-        
-    ' store path to folder containing files
     Application.ScreenUpdating = False
-    Dim username As String, path As String
-    username = (Environ$("Username"))
-    path = "C:\Users\" & username & "\Desktop\AX_Export\"
+
+    ' read config file
+    Dim pathToThisWorksheet As String, configPath As String
+    Dim TextFile As Integer, configContent As String, content As Variant
+    Dim vbsFileName As String, transferOrderFileName As String, purchaseOrderFileName As String
     
+    pathToThisWorksheet = Application.ThisWorkbook.path & "\"
+    configPath = pathToThisWorksheet & "config.txt"
+    
+    TextFile = FreeFile
+    Open configPath For Input As TextFile
+    configContent = Input(LOF(TextFile), TextFile)
+    Close TextFile
+    ' split up text file by spaces
+    content = Split(configContent, vbCrLf)
+    vbsFileName = Trim(content(1))
+    transferOrderFileName = Trim(content(2))
+    purchaseOrderFileName = Trim(content(3))
     ' Setup variables for different workbooks and sheets
     Dim shtMasterModesto As Worksheet, shtMasterJoliet As Worksheet
     Dim wkbInventory As Workbook, shtInventory As Worksheet
@@ -76,7 +88,7 @@ Public Sub NetInventory()
     ' Step 1: Move data from vbs to this sheet
         ' leave off barrels
         ' range A2:D sheet.Cells(Rows.Count, 1).End(xlUp).Row
-    Set wkbVbs = Workbooks.Open(path & "vbs_pull.xlsx")
+    Set wkbVbs = Workbooks.Open(pathToThisWorksheet & vbsFileName)
     Set shtVbs = wkbVbs.Sheets(1)
     Dim numRows As Integer
     
@@ -110,7 +122,7 @@ Public Sub NetInventory()
     y = Year(todayDate)
     invReportName = m & "_" & d & "_" & y & "_InventoryReport.xlsx"
     
-    Set wkbInventory = Workbooks.Open(path & invReportName)
+    Set wkbInventory = Workbooks.Open(pathToThisWorksheet & invReportName)
     Set shtInventory = wkbInventory.Sheets("Daily Inventory")
     lastRow = shtMasterJoliet.Cells(Rows.Count, 3).End(xlUp).Row
     
@@ -166,7 +178,7 @@ Public Sub NetInventory()
     ' Step 3: Fill in missing Ax numbers
     ' fill in any missing data using Product Information sheet
     Dim axNum As String
-    Set wkbProductInformation = Workbooks.Open(path & "ProductInformation.xlsm")
+    Set wkbProductInformation = Workbooks.Open(pathToThisWorksheet & "ProductInformation.xlsm")
     Set shtProductInformation = wkbProductInformation.Sheets("Data")
     endRow = shtProductInformation.Cells(Rows.Count, 1).End(xlUp).Row
     
@@ -197,7 +209,7 @@ foundAX:
         ' column P is description
         ' column R is quantity
     
-    Set wkbPurchaseOrder = Workbooks.Open(path & "purchase_order.csv")
+    Set wkbPurchaseOrder = Workbooks.Open(pathToThisWorksheet & purchaseOrderFileName)
     Set shtPurchaseOrder = wkbPurchaseOrder.Sheets("purchase_order")
     endRow = shtPurchaseOrder.Cells(Rows.Count, 3).End(xlUp).Row
     ' iterate through each item
@@ -223,7 +235,7 @@ foundPOAmount:
         ' column N is quantity
     
     ' iterate through each prod8 in new report
-    Set wkbTransferOrder = Workbooks.Open(path & "inquiries_transfer_orders.xlsx")
+    Set wkbTransferOrder = Workbooks.Open(pathToThisWorksheet & transferOrderFileName)
     Set shtTransferOrder = wkbTransferOrder.Sheets(1)
     endRow = shtTransferOrder.Cells(Rows.Count, 3).End(xlUp).Row
     ' iterate through each item
@@ -288,4 +300,8 @@ foundTOAmount:
     Range("Modesto_Table[Difference]").NumberFormat = "0_);[Red](0)"
     
     shtMasterJoliet.Activate
+End Sub
+
+Public Sub editFileNames()
+
 End Sub
