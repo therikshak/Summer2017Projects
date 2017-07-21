@@ -184,8 +184,12 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     
     'save the excel file
     xlWb.Application.DisplayAlerts = False
+    Application.DisplayAlerts = False
+    
     xlWb.SaveAs filepath
+    
     xlWb.Application.DisplayAlerts = True
+    Application.DisplayAlerts = True
     
     xlWb.Close
     xlApp.Quit
@@ -247,10 +251,7 @@ Private Sub CreatePivot()
     xlWb.Application.Run "PERSONAL.XLSB!DailyInventory.DailyInventory"
     
     'save the excel file and close
-    xlWb.Application.DisplayAlerts = False
     xlWb.SaveAs fileName
-    xlWb.Application.DisplayAlerts = True                                                                                       
-                                                                                            
     xlWb.Close
     xlwb2.Close
     xlApp.Quit
@@ -272,7 +273,7 @@ If Item.MessageClass <> "IPM.Appointment" Then
   Exit Sub
 End If
  
-If Item.Categories <> "Run in 5" Then
+If Item.Categories <> "Run Inventory" Then
   Exit Sub
 End If
  
@@ -282,39 +283,35 @@ completeDailyInventory
 'Delete Appt from calendar when finished
 Item.Delete
 
-' Create another appt to repeat the process
-' CreateAppointment
-
 End Sub
 
 ' dismiss reminder
 Private Sub olRemind_BeforeReminderShow(Cancel As Boolean)
 
     For Each objRem In olRemind
-            If objRem.Caption = "This Appointment reminder fires in 5" Then
-                If objRem.IsVisible Then
-                    objRem.Dismiss
-                    Cancel = True
-                End If
-                Exit For
+        If objRem.Caption = "Run Inventory" Then
+            If objRem.IsVisible Then
+                objRem.Dismiss
+                Cancel = True
             End If
-        Next objRem
+            Exit For
+        End If
+    Next objRem
 End Sub
 
 ' Put this macro in a Module
 Public Sub CreateAppointment()
 Dim objAppointment As Outlook.AppointmentItem
 Dim tDate As Date
-' Using a 1 min reminder so 6  = reminder fires at 5 min.
 tDate = Now() + 2 / 1440
 
 Set objAppointment = Application.CreateItem(olAppointmentItem)
       With objAppointment
-        .Categories = "Run in 5"
-        .Body = "This Appointment reminder fires in 5"
+        .Categories = "Run Inventory"
+        .Body = "Run Inventory"
         .Start = tDate
         .End = tDate
-        .subject = "This Appointment reminder fires in 5"
+        .subject = "Run Inventory"
         .ReminderSet = True
         .ReminderMinutesBeforeStart = 1
         .Save

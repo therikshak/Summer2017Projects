@@ -7,20 +7,17 @@ Public Sub NetInventory()
         ' vbs copy paste
         
     'Clear the existing workbook
-    Dim deleteSheet As Worksheet
+    Dim Sheet As Worksheet
     ActiveWorkbook.Application.DisplayAlerts = False
-    For Each deleteSheet In ActiveWorkbook.Worksheets
-        If deleteSheet.Name = "Modesto" Then
-            deleteSheet.Delete
-        ElseIf deleteSheet.Name = "Sheet 1" Then
-            ' leave it be
-        ElseIf deleteSheet.Name = "Joliet" Then
-            deleteSheet.Name = "Sheet 1"
-            deleteSheet.Cells.Clear
+    For Each Sheet In ActiveWorkbook.Worksheets
+        If Sheet.Name = "Modesto" Then
+            Sheet.Cells.Clear
+        ElseIf Sheet.Name = "Joliet" Then
+            Sheet.Cells.Clear
         Else
-            deleteSheet.Delete
+            Sheet.Delete
         End If
-    Next deleteSheet
+    Next Sheet
     ActiveWorkbook.Application.DisplayAlerts = True
     Application.ScreenUpdating = False
 
@@ -28,7 +25,8 @@ Public Sub NetInventory()
     Dim pathToThisWorksheet As String, configPath As String
     Dim TextFile As Integer, configContent As String, content As Variant
     Dim vbsFileName As String, transferOrderFileName As String, purchaseOrderFileName As String
-    
+        
+    On Error GoTo InvalidConfig
     pathToThisWorksheet = Application.ThisWorkbook.path & "\"
     configPath = pathToThisWorksheet & "config.txt"
     
@@ -38,10 +36,11 @@ Public Sub NetInventory()
     Close TextFile
     ' split up text file by spaces
     content = Split(configContent, vbCrLf)
-    vbsFileName = Trim(content(1))
-    transferOrderFileName = Trim(content(2))
-    purchaseOrderFileName = Trim(content(3))
+    vbsFileName = Trim(content(0))
+    transferOrderFileName = Trim(content(1))
+    purchaseOrderFileName = Trim(content(2))
     
+    On Error GoTo 0
     ' Setup variables for different workbooks and sheets
     Dim shtMasterModesto As Worksheet, shtMasterJoliet As Worksheet
     Dim wkbInventory As Workbook, shtInventory As Worksheet
@@ -51,11 +50,9 @@ Public Sub NetInventory()
     Dim wkbProductInformation As Workbook, shtProductInformation As Worksheet
     
     ' Assign sheet for Modesto and Joliet
-    Sheets.Add After:=ActiveSheet
-    ActiveSheet.Name = "Modesto"
+
     Set shtMasterModesto = Worksheets("Modesto")
-    Set shtMasterJoliet = Worksheets(1)
-    shtMasterJoliet.Name = "Joliet"
+    Set shtMasterJoliet = Worksheets("Joliet")
     
     ' in this report, column headers will be:
     '   A   B    C       D           E             F     G  H       I           J
@@ -123,8 +120,12 @@ Public Sub NetInventory()
     y = Year(todayDate)
     invReportName = m & "_" & d & "_" & y & "_InventoryReport.xlsx"
     
+    On Error GoTo MoveInventory
     Set wkbInventory = Workbooks.Open(pathToThisWorksheet & invReportName)
     Set shtInventory = wkbInventory.Sheets("Daily Inventory")
+    
+    On Error GoTo 0
+    
     lastRow = shtMasterJoliet.Cells(Rows.Count, 3).End(xlUp).Row
     
     ' iterate through and get the correct quantity given the brewery is correct
@@ -301,6 +302,13 @@ foundTOAmount:
     Range("Modesto_Table[Difference]").NumberFormat = "0_);[Red](0)"
     
     shtMasterJoliet.Activate
+    Exit Sub
+    
+MoveInventory:
+    MsgBox ("Move today's invenory report into the folder")
+    Exit Sub
+InvalidConfig:
+    MsgBox ("ERROR: Configuration file not setup. Click the Provide File Names button to set the file up")
 End Sub
 
 Public Sub editFileNames()
@@ -343,6 +351,20 @@ Public Sub editFileNames()
         End If
     End With
     
-    'edit the config sheet
-    '***********************************************
+    'Input the new information to the config sheet
+    Dim pathToThisWorksheet As String, configPath As String
+    Dim TextFile As Integer, configContent As String
+    
+    'delete the old config
+    pathToThisWorksheet = Application.ThisWorkbook.path & "\"
+    configPath = pathToThisWorksheet & "config.txt"
+    Kill configPath
+    
+    'create a new one and send the three file names
+    TextFile = FreeFile
+    Open configPath For Output As TextFile
+    Print #TextFile, vbsFileName
+    Print #TextFile, transferOrderFileName
+    Print #TextFile, purchaseOrderFileName
+    Close TextFile
 End Sub
