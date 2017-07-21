@@ -23,7 +23,6 @@ Public Sub completeDailyInventory()
     moveOld
 End Sub
 
-
 'delete the old reports
 Private Sub DeleteReports()
     Dim path As String
