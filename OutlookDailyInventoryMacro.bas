@@ -90,6 +90,15 @@ Private Function DownloadReports() As Boolean
     'count how many reports downloaded
     numDownloaded = 0
     
+    Dim logPath As String, TextFile As Integer
+    'delete the old config
+    logPath = saveFolder & "log.txt"
+    
+    'create a new one and send the three file names
+    TextFile = FreeFile
+    Open logPath For Output As TextFile
+    Print #TextFile, Now
+    
     For Each Item In reportFolder.items
         'if it is an email, then get its data
         If Item.Class = olMail Then
@@ -107,6 +116,7 @@ Private Function DownloadReports() As Boolean
             'check if this is the correct email and export to excel if so
             'otherwise the email will be skipped
                 If (goodEmail(recDay, recMonth, True)) Then
+                    Print #TextFile, sender
                     'report comes as text in the body of the email
                     'so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
@@ -116,6 +126,7 @@ Private Function DownloadReports() As Boolean
             Else
                 'first check if the email is from today, otherwise skip it
                 If (goodEmail(recDay, recMonth, False)) Then
+                    Print #TextFile, sender
                     'SAVE ATTACHMENTS
                     Set attachments = Item.attachments
                     attachmentCount = attachments.Count
@@ -150,6 +161,9 @@ Private Function DownloadReports() As Boolean
 
     Set Item = Nothing
     Set reportFolder = Nothing
+    
+    Print #TextFile, numDownloaded
+    Close TextFile
     
     'set boolean for if reports downloaded
     If numDownloaded > 0 Then

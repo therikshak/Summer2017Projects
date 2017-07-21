@@ -353,7 +353,7 @@ Public Sub editFileNames()
     
     'Input the new information to the config sheet
     Dim pathToThisWorksheet As String, configPath As String
-    Dim TextFile As Integer, configContent As String
+    Dim TextFile As Integer
     
     'delete the old config
     pathToThisWorksheet = Application.ThisWorkbook.path & "\"
