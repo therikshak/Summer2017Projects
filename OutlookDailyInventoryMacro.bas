@@ -69,6 +69,8 @@ Private Function DownloadReports() As Boolean
     'subject and sender of email and variable to store attachments in
     Dim subject As String, sender As String, attachments As Outlook.attachments
     
+    Dim recMonth As String, recDay As String, dateReceived As String
+    
     'number of reports downloaded, number of attachments for an email, number of city reports downloaded
     Dim numDownloaded As Integer, attachmentCount As Long, cityCount As Integer
     
@@ -96,43 +98,52 @@ Private Function DownloadReports() As Boolean
             subject = Item.subject
             'original sender
             sender = Item.SenderEmailAddress
-                        
+            dateReceived = Item.ReceivedTime
+            recMonth = month(dateReceived)
+            recDay = day(dateReceived)
+            
             'IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
-                'report comes as text in the body of the email
-                'so it needs to be put into an excel file
-                exportToExcel Item, saveFolder
-                numDownloaded = numDownloaded + 1
-                newHoll = True
+            'check if this is the correct email and export to excel if so
+            'otherwise the email will be skipped
+                If (goodEmail(recDay, recMonth, True)) Then
+                    'report comes as text in the body of the email
+                    'so it needs to be put into an excel file
+                    exportToExcel Item, saveFolder
+                    numDownloaded = numDownloaded + 1
+                End If
             'if not New Holland then get the attachments
             Else
-                'SAVE ATTACHMENTS
-                Set attachments = Item.attachments
-                attachmentCount = attachments.Count
-                'if attachments exist
-                For i = attachmentCount To 1 Step -1
-                    'get first filename attached to email
-                    filepath = attachments.Item(i).fileName
-                    'get the length up until a period
-                    fileNameLength = InStrRev(filepath, ".")
-                    'make a substring that is the fileType and the fileName without type
-                    theFileType = Right(filepath, Len(filepath) - fileNameLength)
-                    fileName = Left(filepath, fileNameLength - 1)
-                    'only save the attachment if it is an excel file
-                    If theFileType = "xls" Or theFileType = "xlsx" Then
-                        'if a city brewery, then a number needs to be added to the end of the file
-                        If InStr(1, filepath, "AGED FG") > 0 Then
-                            filepath = saveFolder & fileName & cityCount & "." & theFileType
-                            cityCount = cityCount + 1
-                        Else
-                            filepath = saveFolder & filepath
+                'first check if the email is from today, otherwise skip it
+                If (goodEmail(recDay, recMonth, False)) Then
+                    'SAVE ATTACHMENTS
+                    Set attachments = Item.attachments
+                    attachmentCount = attachments.Count
+                    'if attachments exist
+                    For i = attachmentCount To 1 Step -1
+                        'get first filename attached to email
+                        filepath = attachments.Item(i).fileName
+                        'get the length up until a period
+                        fileNameLength = InStrRev(filepath, ".")
+                        'make a substring that is the fileType and the fileName without type
+                        theFileType = Right(filepath, Len(filepath) - fileNameLength)
+                        fileName = Left(filepath, fileNameLength - 1)
+                        'only save the attachment if it is an excel file
+                        If theFileType = "xls" Or theFileType = "xlsx" Then
+                            'if a city brewery, then a number needs to be added to the end of the file
+                            If InStr(1, filepath, "AGED FG") > 0 Then
+                                filepath = saveFolder & fileName & cityCount & "." & theFileType
+                                cityCount = cityCount + 1
+                            Else
+                                filepath = saveFolder & filepath
+                            End If
+                            'save the attachment to the specified location
+                            attachments.Item(i).SaveAsFile filepath
                         End If
-                        'save the attachment to the specified location
-                        attachments.Item(i).SaveAsFile filepath
-                    End If
-                Next i
-                'increment number of reports downloaded
-                numDownloaded = numDownloaded + 1
+                    Next i
+                    'increment number of reports downloaded
+                    numDownloaded = numDownloaded + 1
+                End If
             End If
         End If
     Next Item
@@ -149,6 +160,30 @@ Private Function DownloadReports() As Boolean
         Exit Function
     End If
     
+End Function
+
+' takes in the day and month of the received email as well as if it is from new holland
+' if the email was received day, it returns true (for New Holland it is yesterday)
+Private Function goodEmail(recDay As String, recMonth As String, newHoll As Boolean) As Boolean
+    If newHoll Then
+        If recDay <> day(Date - 1) Then
+            GoTo wrongDate
+            If recMonth <> month(Date - 1) Then
+                GoTo wrongDate
+            End If
+        End If
+    Else
+        If recDay <> day(Date) Then
+            GoTo wrongDate
+            If recMonth <> month(Date) Then
+                GoTo wrongDate
+            End If
+        End If
+    End If
+    goodEmail = True
+    Exit Function
+wrongDate:
+    goodEmail = False
 End Function
 
 'export email contents to excel
