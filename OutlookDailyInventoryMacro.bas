@@ -1,8 +1,13 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
 Public Sub completeDailyInventory()
     'delete everything in sharepoint folder except Product Information
-    DeleteReports
+    Dim alreadyRan As Boolean
+    alreadyRan = DeleteReports
     
+    'exit macro if already run
+    If alreadyRan Then
+        Exit Sub
+    End If
     'download reports from emails and save to sharepoint folder
     Dim successfulDownload As Boolean
     successfulDownload = DownloadReports
@@ -24,7 +29,7 @@ Public Sub completeDailyInventory()
 End Sub
 
 'delete the old reports
-Private Sub DeleteReports()
+Private Function DeleteReports() As Boolean
     Dim path As String
     Dim username As String
     username = (Environ$("Username"))
@@ -45,6 +50,9 @@ Private Sub DeleteReports()
             'skip the product information file
         ElseIf InStr(1, file, combinedDate) > 0 Then
             'skip deleting report if it is today's and macro was run again
+            'exit macro as it will cause an error
+            DeleteReports = True
+            Exit Function
         Else
             'delete the file
             Kill path & file
@@ -53,7 +61,7 @@ Private Sub DeleteReports()
         file = Dir
     Loop
     
-End Sub
+End Function
 
 Private Function DownloadReports() As Boolean
     Dim Item As Outlook.MailItem
@@ -114,7 +122,7 @@ Private Function DownloadReports() As Boolean
             ' IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
             ' check if this is the correct email and export to excel if so otherwise the email will be skipped
-                If Not (goodEmail(recDay, recMonth, True)) Then
+                If (goodEmail(recDay, recMonth, True)) Then
                     Print #TextFile, "saved: " & sender
                     ' report comes as text in the body of the email so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
@@ -313,7 +321,7 @@ End Sub
 
 'On start up create an appointment to trigger the inventory report to run
 Private Sub Application_Startup()
-  CreateAppointment
+  'CreateAppointment
 End Sub
 
 ' If a reminder pops up check it and if it is the "Run Inventory" macro, then run the inventory report
