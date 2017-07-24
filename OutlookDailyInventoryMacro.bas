@@ -90,10 +90,13 @@ Private Function DownloadReports() As Boolean
     numDownloaded = 0
     
     Dim logPath As String, TextFile As Integer
-    'delete the old config
     logPath = saveFolder & "log.txt"
     
-    'create a new one and send the three file names
+    ' create a new log, the file will contain:
+        ' Date & time report run
+        ' skipped & saved emails by sender
+        ' number of saved reports
+        
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
@@ -101,58 +104,58 @@ Private Function DownloadReports() As Boolean
     For Each Item In reportFolder.items
         'if it is an email, then get its data
         If Item.Class = olMail Then
-            'GET EMAIL INFO
-            'subject line of email
+            ' GET EMAIL INFO: subject, sender, date received
             subject = Item.subject
-            'original sender
             sender = Item.SenderEmailAddress
             dateReceived = Item.ReceivedTime
             recMonth = month(dateReceived)
             recDay = day(dateReceived)
             
-            'IF FROM NEW HOLLAND
+            ' IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
-            'check if this is the correct email and export to excel if so
-            'otherwise the email will be skipped
-                If (goodEmail(recDay, recMonth, True)) Then
-                    Print #TextFile, sender
-                    'report comes as text in the body of the email
-                    'so it needs to be put into an excel file
+            ' check if this is the correct email and export to excel if so otherwise the email will be skipped
+                If Not (goodEmail(recDay, recMonth, True)) Then
+                    Print #TextFile, "saved: " & sender
+                    ' report comes as text in the body of the email so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
                     numDownloaded = numDownloaded + 1
+                Else
+                    Print #TextFile, "skipped: " & sender
                 End If
-            'if not New Holland then get the attachments
+            ' if not New Holland then get the attachments
             Else
-                'first check if the email is from today, otherwise skip it
+                ' first check if the email is from today, otherwise skip it
                 If (goodEmail(recDay, recMonth, False)) Then
-                    Print #TextFile, sender
-                    'SAVE ATTACHMENTS
+                    Print #TextFile, "saved: " & sender
+                    ' SAVE ATTACHMENTS
                     Set attachments = Item.attachments
                     attachmentCount = attachments.Count
-                    'if attachments exist
+                    ' if attachments exist
                     For i = attachmentCount To 1 Step -1
-                        'get first filename attached to email
+                        ' get first filename attached to email
                         filepath = attachments.Item(i).fileName
-                        'get the length up until a period
+                        ' get the length up until a period
                         fileNameLength = InStrRev(filepath, ".")
-                        'make a substring that is the fileType and the fileName without type
+                        ' make a substring that is the fileType and the fileName without type
                         theFileType = Right(filepath, Len(filepath) - fileNameLength)
                         fileName = Left(filepath, fileNameLength - 1)
-                        'only save the attachment if it is an excel file
+                        ' only save the attachment if it is an excel file
                         If theFileType = "xls" Or theFileType = "xlsx" Then
-                            'if a city brewery, then a number needs to be added to the end of the file
+                            ' if a city brewery, then a number needs to be added to the end of the file
                             If InStr(1, filepath, "AGED FG") > 0 Then
                                 filepath = saveFolder & fileName & cityCount & "." & theFileType
                                 cityCount = cityCount + 1
                             Else
                                 filepath = saveFolder & filepath
                             End If
-                            'save the attachment to the specified location
+                            ' save the attachment to the specified location
                             attachments.Item(i).SaveAsFile filepath
                         End If
                     Next i
-                    'increment number of reports downloaded
+                    ' increment number of reports downloaded
                     numDownloaded = numDownloaded + 1
+                Else
+                    Print #TextFile, "skipped: " & sender
                 End If
             End If
         End If
@@ -164,7 +167,7 @@ Private Function DownloadReports() As Boolean
     Print #TextFile, numDownloaded
     Close TextFile
     
-    'set boolean for if reports downloaded
+    ' set boolean for if reports downloaded
     If numDownloaded > 0 Then
         DownloadReports = True
         Exit Function
@@ -176,7 +179,7 @@ Private Function DownloadReports() As Boolean
 End Function
 
 ' takes in the day and month of the received email as well as if it is from new holland
-' if the email was received day, it returns true (for New Holland it is yesterday)
+' if the email was received today, it returns true (for New Holland it is yesterday for true)
 Private Function goodEmail(recDay As String, recMonth As String, newHoll As Boolean) As Boolean
     If newHoll Then
         If recDay <> day(Date - 1) Then
@@ -199,8 +202,8 @@ wrongDate:
     goodEmail = False
 End Function
 
-'export email contents to excel
-'takes in a mail item and where to save the file
+' export email contents to excel
+' takes in a mail item and where to save the file
 Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     Dim fileName As String, filepath As String
     fileName = "NewHollandReport.xlsx"
@@ -221,24 +224,19 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     tableRows = Split(mail.Body, vbCrLf)
     'loop through each row
     For r = 2 To UBound(tableRows)
-        'read if there are empty cells after useful data
+        ' read if there are empty cells and exit if there are
         If Len(tableRows(r)) < 5 Then Exit For
-        'get each cell and put into excel
+        ' get each cell and put into excel
         tableCols = Split(tableRows(r), vbTab)
         For C = 0 To UBound(tableCols)
             destCell.Offset(r - 2, C).Value = tableCols(C)
         Next
     Next
     
-    'save the excel file
+    'save the excel file and close excel
     xlWb.Application.DisplayAlerts = False
-    Application.DisplayAlerts = False
-    
     xlWb.SaveAs filepath
-    
     xlWb.Application.DisplayAlerts = True
-    Application.DisplayAlerts = True
-    
     xlWb.Close
     xlApp.Quit
     
@@ -247,6 +245,7 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     Set xlWs = Nothing
 End Sub
 
+' move all of the old reports to the old reports folder
 Private Sub moveOld()
     Dim Item As Outlook.MailItem 'used for individual emails
     Dim myNameSpace As Outlook.NameSpace
@@ -259,6 +258,8 @@ Private Sub moveOld()
     Set myDestFolder = myInbox.Folders("Old Inventory Reports")
     Set reportFolder = myInbox.Folders("Inventory Reports Macro")
     
+    ' loop through each email in the Inventory Reports Macro folder
+    ' and move to the Old Inventory Reports folder
     While reportFolder.items.Count > 0
         For Each Item In reportFolder.items
             If Item.Class = olMail Then
@@ -310,32 +311,36 @@ Private Sub CreatePivot()
     Set xlwb2 = Nothing
 End Sub
 
+'On start up create an appointment to trigger the inventory report to run
 Private Sub Application_Startup()
-  'CreateAppointment
+  CreateAppointment
 End Sub
 
+' If a reminder pops up check it and if it is the "Run Inventory" macro, then run the inventory report
+' otherwise exit
 Private Sub Application_Reminder(ByVal Item As Object)
-Set olRemind = Outlook.reminders
-
-If Item.MessageClass <> "IPM.Appointment" Then
-  Exit Sub
-End If
- 
-If Item.Categories <> "Run Inventory" Then
-  Exit Sub
-End If
- 
-' Call your macro here
-completeDailyInventory
-
-'Delete Appt from calendar when finished
-Item.Delete
+    Set olRemind = Outlook.reminders
+    
+    If Item.MessageClass <> "IPM.Appointment" Then
+      Exit Sub
+    End If
+     
+    If Item.Categories <> "Run Inventory" Then
+      Exit Sub
+    End If
+     
+    ' Call the macro here
+    completeDailyInventory
+    
+    'Delete Appt from calendar when finished
+    Item.Delete
 
 End Sub
 
 ' dismiss reminder
 Private Sub olRemind_BeforeReminderShow(Cancel As Boolean)
-
+    
+    ' check each reminder and if it is the Run Inventory reminder, then dismiss it
     For Each objRem In olRemind
         If objRem.Caption = "Run Inventory" Then
             If objRem.IsVisible Then
@@ -347,21 +352,23 @@ Private Sub olRemind_BeforeReminderShow(Cancel As Boolean)
     Next objRem
 End Sub
 
-' Put this macro in a Module
+' create an appointment that will trigger one minute from now
 Public Sub CreateAppointment()
-Dim objAppointment As Outlook.AppointmentItem
-Dim tDate As Date
-tDate = Now() + 2 / 1440
-
-Set objAppointment = Application.CreateItem(olAppointmentItem)
-      With objAppointment
-        .Categories = "Run Inventory"
-        .Body = "Run Inventory"
-        .Start = tDate
-        .End = tDate
-        .subject = "Run Inventory"
-        .ReminderSet = True
-        .ReminderMinutesBeforeStart = 1
-        .Save
-      End With
+    Dim objAppointment As Outlook.AppointmentItem
+    Dim tDate As Date
+    tDate = Now() + 1 / 1440
+    
+    Set objAppointment = Application.CreateItem(olAppointmentItem)
+          With objAppointment
+            .Categories = "Run Inventory"
+            .Body = "Run Inventory"
+            .Start = tDate
+            .End = tDate
+            .subject = "Run Inventory"
+            .ReminderSet = True
+            .ReminderMinutesBeforeStart = 1
+            .Save
+          End With
 End Sub
+
+
