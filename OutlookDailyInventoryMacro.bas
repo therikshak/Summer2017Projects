@@ -60,7 +60,8 @@ Private Function DeleteReports() As Boolean
         'get next file
         file = Dir
     Loop
-    
+    DeleteReports = False
+    Exit Function
 End Function
 
 Private Function DownloadReports() As Boolean
