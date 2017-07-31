@@ -1,31 +1,54 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
 Public Sub completeDailyInventory()
+' ******** NEW
+    ' log what is happening in log.txt
+    Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
+    username = (Environ$("Username"))
+    saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
+    logPath = saveFolder & "logDownloadReports.txt"
+    TextFile = FreeFile
+    Open logPath For Output As TextFile
+    Print #TextFile, Now
+' *********** NEW
+    Print #TextFile, "Before DeleteReports"
     'delete everything in sharepoint folder except Product Information
     Dim alreadyRan As Boolean
     alreadyRan = DeleteReports
+    Print #TextFile, "After DeleteReports"
     
     'exit macro if already run
     If alreadyRan Then
-        Exit Sub
+       Print #TextFile, "alreadyRan Boolean is True and caused exit"
+       Exit Sub
     End If
+    
+    Print #TextFile, "Before DownloadReports"
     'download reports from emails and save to sharepoint folder
     Dim successfulDownload As Boolean
     successfulDownload = DownloadReports
+    Print #TextFile, "After DownloadReports"
     
-    'Run Script to get Lindner inventory
-        'Dim wsh As Object
-        'Set wsh = CreateObject("Wscript.Shell")
-        'path = "C:\Users\estryshak\SharePoint\T\Projects\InventoryReports\Macro\LindnerScript.exe"
-        'Call wsh.Run(path, 0, True)
+    Print #TextFile, "Before Lindner Call"
+    ' ********** NEW
+    'Run Script to get Lindner inventory, this saves to Documents
+    Dim wsh As Object, x As Integer
+    Set wsh = VBA.CreateObject("Wscript.Shell")
+    x = wsh.Run("cmd /c C:\Users\" & username * "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
+    moveLinder
+    ' ********** NEW
+    Print #TextFile, "After Lindner Call"
     
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
     If successfulDownload Then
         CreatePivot
+        Print #TextFile, "CreatePivot called"
     End If
     
     'move old reports
     moveOld
+    Print #TextFile, "moveOld called"
+    Close TextFile
 End Sub
 
 'delete the old reports
@@ -64,8 +87,23 @@ Private Function DeleteReports() As Boolean
     Exit Function
 End Function
 
+' move the lindner csv to the sharepoint folder
+Private Sub moveLinder()
+    Dim username As String, documentsFolder As String, saveFolder As String
+    Dim FSO As Object
+    Set FSO = CreateObject("Scripting.Filesystemobject")
+    
+    username = (Environ$("Username"))
+    documentsFolder = "C:\Users\" & username & "\Documents\lindner.csv"
+    saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
+    
+    FSO.MoveFile Source:=documentsFolder, Destination:=saveFolder
+
+End Sub
+
+' Download all of the reports in the folder and save to the sharepoint folder
 Private Function DownloadReports() As Boolean
-    Dim Item As Outlook.MailItem
+    Dim Item As Outlook.MailIte
     Dim myNameSpace As Outlook.NameSpace
     Dim myInbox As Outlook.folder
     Dim reportFolder As Outlook.folder
@@ -88,8 +126,8 @@ Private Function DownloadReports() As Boolean
     
     'saveFolder is where reports will be saved, username gets the system username, fileName gets the report name
     'filepath will have the folder, name of the report, and other information concatenated to save the report
-    Dim saveFolder As String, username As String, fileName As String, filepath As String
-    
+    Dim saveFolder As String, username As String, fileName As String, filepath As String, documentsFolder As String
+
     username = (Environ$("Username"))
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
@@ -99,7 +137,7 @@ Private Function DownloadReports() As Boolean
     numDownloaded = 0
     
     Dim logPath As String, TextFile As Integer
-    logPath = saveFolder & "log.txt"
+    logPath = saveFolder & "logDownloadReports.txt"
     
     ' create a new log, the file will contain:
         ' Date & time report run
@@ -124,9 +162,9 @@ Private Function DownloadReports() As Boolean
             If sender = "payables@newhollandbrew.com" Then
             ' check if this is the correct email and export to excel if so otherwise the email will be skipped
                 If (goodEmail(recDay, recMonth, True)) Then
-                    Print #TextFile, "saved: " & sender
                     ' report comes as text in the body of the email so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
+                    Print #TextFile, "saved: " & sender
                     numDownloaded = numDownloaded + 1
                 Else
                     Print #TextFile, "skipped: " & sender
@@ -135,7 +173,6 @@ Private Function DownloadReports() As Boolean
             Else
                 ' first check if the email is from today, otherwise skip it
                 If (goodEmail(recDay, recMonth, False)) Then
-                    Print #TextFile, "saved: " & sender
                     ' SAVE ATTACHMENTS
                     Set attachments = Item.attachments
                     attachmentCount = attachments.Count
@@ -159,6 +196,7 @@ Private Function DownloadReports() As Boolean
                             End If
                             ' save the attachment to the specified location
                             attachments.Item(i).SaveAsFile filepath
+                            Print #TextFile, "saved: " & sender
                         End If
                     Next i
                     ' increment number of reports downloaded
@@ -254,30 +292,6 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     Set xlWs = Nothing
 End Sub
 
-' move all of the old reports to the old reports folder
-Private Sub moveOld()
-    Dim Item As Outlook.MailItem 'used for individual emails
-    Dim myNameSpace As Outlook.NameSpace
-    Dim myInbox As Outlook.folder
-    Dim myDestFolder As Outlook.folder
-    Dim reportFolder As Outlook.folder
-
-    Set myNameSpace = Application.GetNamespace("MAPI")
-    Set myInbox = myNameSpace.GetDefaultFolder(olFolderInbox)
-    Set myDestFolder = myInbox.Folders("Old Inventory Reports")
-    Set reportFolder = myInbox.Folders("Inventory Reports Macro")
-    
-    ' loop through each email in the Inventory Reports Macro folder
-    ' and move to the Old Inventory Reports folder
-    While reportFolder.items.Count > 0
-        For Each Item In reportFolder.items
-            If Item.Class = olMail Then
-                Item.Move myDestFolder
-            End If
-        Next Item
-    Wend
-
-End Sub
 
 'create the inventory report
 Private Sub CreatePivot()
@@ -320,16 +334,39 @@ Private Sub CreatePivot()
     Set xlwb2 = Nothing
 End Sub
 
+' move all of the old reports to the old reports folder
+Private Sub moveOld()
+    Dim Item As Outlook.MailItem 'used for individual emails
+    Dim myNameSpace As Outlook.NameSpace
+    Dim myInbox As Outlook.folder
+    Dim myDestFolder As Outlook.folder
+    Dim reportFolder As Outlook.folder
+
+    Set myNameSpace = Application.GetNamespace("MAPI")
+    Set myInbox = myNameSpace.GetDefaultFolder(olFolderInbox)
+    Set myDestFolder = myInbox.Folders("Old Inventory Reports")
+    Set reportFolder = myInbox.Folders("Inventory Reports Macro")
+    
+    ' loop through each email in the Inventory Reports Macro folder
+    ' and move to the Old Inventory Reports folder
+    While reportFolder.items.Count > 0
+        For Each Item In reportFolder.items
+            If Item.Class = olMail Then
+                Item.Move myDestFolder
+            End If
+        Next Item
+    Wend
+End Sub
+
 'On start up create an appointment to trigger the inventory report to run
 Private Sub Application_Startup()
-  'CreateAppointment
+  CreateAppointment
 End Sub
 
 ' If a reminder pops up check it and if it is the "Run Inventory" macro, then run the inventory report
 ' otherwise exit
 Private Sub Application_Reminder(ByVal Item As Object)
     Set olRemind = Outlook.reminders
-    
     If Item.MessageClass <> "IPM.Appointment" Then
       Exit Sub
     End If
@@ -348,7 +385,6 @@ End Sub
 
 ' dismiss reminder
 Private Sub olRemind_BeforeReminderShow(Cancel As Boolean)
-    
     ' check each reminder and if it is the Run Inventory reminder, then dismiss it
     For Each objRem In olRemind
         If objRem.Caption = "Run Inventory" Then
