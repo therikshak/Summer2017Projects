@@ -54,7 +54,7 @@ Sub DailyInventory()
             newHolland
         ElseIf InStr(1, fileNames(i), "Strohs") > 0 Then
             brewDetroit
-        ElseIf InStr(1, fileNames(i), "Lindner") > 0 Then
+        ElseIf InStr(1, fileNames(i), "lindner") > 0 Then
             Lindner
         ElseIf InStr(1, fileNames(i), "InventoryReport") > 0 Then
             'do nothing
@@ -190,6 +190,7 @@ Sub DailyInventory()
             'get the prod8 from the table
             prod8 = shtMaster.Cells(i, 3)
             'perform an index match with the prod8 to get the ax number
+            On Error Resume Next
             With shtProdInfoData.Application.WorksheetFunction
                 shtMaster.Cells(i, 2) = _
                 .Index(shtProdInfoData.Range("A2:A1000"), _
@@ -481,15 +482,13 @@ Private Sub Lindner()
     
     bName = "Lindner"
     pDate = "NO DATA"
-    'delete first 8 rows
-    Rows("1:8").Delete Shift:=xlUp
     'get number of rows in table
-    n = Cells(Rows.Count, "E").End(xlUp).Row
+    n = Cells(Rows.Count, "A").End(xlUp).Row
     'loop through table and extract information
     For i = 2 To n
-        axNum.Add Cells(i, "A").Value
-        prodName.Add Cells(i, "B").Value
-        quantity.Add Cells(i, "E").Value
+        axNum.Add Cells(i, "B").Value
+        prodName.Add Cells(i, "C").Value
+        quantity.Add Cells(i, "D").Value
     Next i
     
     'output to standard table
