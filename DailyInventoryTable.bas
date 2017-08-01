@@ -1,4 +1,4 @@
-Attribute VB_Name = "DailyInventory"
+Attribute VB_Name = "DailyInventoryTable"
 Sub DailyInventory()
     Dim file As Variant, path As String
     Dim fileNames As New Collection
@@ -13,6 +13,8 @@ Sub DailyInventory()
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
             productInformationSheet = file
+        ElseIf InStr(1, file, "log") > 0 Then
+            'skip
         Else
             fileNames.Add file
         End If

@@ -5,15 +5,18 @@ Public Sub completeDailyInventory()
     Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
     username = (Environ$("Username"))
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
-    logPath = saveFolder & "logDownloadReports.txt"
+    logPath = saveFolder & "logGeneral.txt"
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
 ' *********** NEW
+
     Print #TextFile, "Before DeleteReports"
+    
     'delete everything in sharepoint folder except Product Information
     Dim alreadyRan As Boolean
     alreadyRan = DeleteReports
+    
     Print #TextFile, "After DeleteReports"
     
     'exit macro if already run
@@ -33,10 +36,10 @@ Public Sub completeDailyInventory()
     'Run Script to get Lindner inventory, this saves to Documents
     Dim wsh As Object, x As Integer
     Set wsh = VBA.CreateObject("Wscript.Shell")
-    x = wsh.Run("cmd /c C:\Users\" & username * "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
+    x = wsh.Run("cmd /c C:\Users\" & username & "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
     moveLinder
-    ' ********** NEW
     Print #TextFile, "After Lindner Call"
+    ' ********** NEW
     
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
@@ -76,6 +79,8 @@ Private Function DeleteReports() As Boolean
             'exit macro as it will cause an error
             DeleteReports = True
             Exit Function
+        ElseIf InStr(1, file, "General") > 0 Then
+            ' skip
         Else
             'delete the file
             Kill path & file
@@ -103,7 +108,7 @@ End Sub
 
 ' Download all of the reports in the folder and save to the sharepoint folder
 Private Function DownloadReports() As Boolean
-    Dim Item As Outlook.MailIte
+    Dim Item As Outlook.MailItem
     Dim myNameSpace As Outlook.NameSpace
     Dim myInbox As Outlook.folder
     Dim reportFolder As Outlook.folder
@@ -256,6 +261,15 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     fileName = "NewHollandReport.xlsx"
     filepath = folder & fileName
     
+    ' log what is happening in logExportToExcel.txt
+    Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
+    username = (Environ$("Username"))
+    saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
+    logPath = saveFolder & "logExportToExcel.txt"
+    TextFile = FreeFile
+    Open logPath For Output As TextFile
+    Print #TextFile, Now
+    
     Dim xlApp As Object, xlWb As Object, xlWs As Object
     Dim lRow As Long
     
@@ -264,11 +278,14 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
     Set xlWb = xlApp.Workbooks.Add
     Set xlWs = xlWb.Sheets(1)
     
+    Print #TextFile, "Created instance of excel"
+    
     Dim tableRows() As String, tableCols() As String, destCell As Object
     Dim r As Integer, C As Integer
     Set destCell = xlWs.Range("A1")
     'get the rows of the table in the email
     tableRows = Split(mail.Body, vbCrLf)
+    Print #TextFile, "Before Looping"
     'loop through each row
     For r = 2 To UBound(tableRows)
         ' read if there are empty cells and exit if there are
@@ -280,18 +297,21 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
         Next
     Next
     
+    Print #TextFile, "After looping through email"
     'save the excel file and close excel
     xlWb.Application.DisplayAlerts = False
     xlWb.SaveAs filepath
     xlWb.Application.DisplayAlerts = True
+    Print #TextFile, "After saving excel"
     xlWb.Close
     xlApp.Quit
+    Print #TextFile, "After closing workbook and quitting the application"
     
     Set xlApp = Nothing
     Set xlWb = Nothing
     Set xlWs = Nothing
+    Close TextFile
 End Sub
-
 
 'create the inventory report
 Private Sub CreatePivot()
@@ -300,11 +320,20 @@ Private Sub CreatePivot()
     Dim username As String
     username = (Environ$("Username"))
     
+    ' LOGGING
+    Dim saveFolder As String, logPath As String, TextFile As Integer
+    saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
+    logPath = saveFolder & "logCreatePivot.txt"
+    TextFile = FreeFile
+    Open logPath For Output As TextFile
+    Print #TextFile, Now
+    
     'start a new instance of excel
     Set xlApp = New Excel.Application
     Set xlwb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
     Set xlWb = xlApp.Workbooks.Add
     Set xlWs = xlWb.Sheets(1)
+    Print #TextFile, "Created excel app and opened PERSONAL"
     
     'get today's date
     Dim todayDate As Date, m As String, d As String, y As String
@@ -320,7 +349,8 @@ Private Sub CreatePivot()
     'don't visibly open excel
     xlApp.Visible = False
     'run the inventory macro from the PERSONAL workbook
-    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory.DailyInventory"
+    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory"
+    Print #TextFile, "Macro Run and finished"
     
     'save the excel file and close
     xlWb.SaveAs fileName
@@ -332,6 +362,9 @@ Private Sub CreatePivot()
     Set xlWb = Nothing
     Set xlWs = Nothing
     Set xlwb2 = Nothing
+    
+    Print #TextFile, "Excel saved, closed, and quit"
+    Close TextFile
 End Sub
 
 ' move all of the old reports to the old reports folder
@@ -415,5 +448,3 @@ Public Sub CreateAppointment()
             .Save
           End With
 End Sub
-
-
