@@ -21,7 +21,7 @@ Sub MillerCoorsOrderSummary()
     Application.DisplayAlerts = True
     
     '  copy the data from the csv to this workbook
-    Set wkbFinal = Workbooks.Open(ThisWorkbook.Path & "\final.csv")
+    Set wkbFinal = Workbooks.Open(ThisWorkbook.path & "\final.csv")
     wkbFinal.Sheets(1).Copy After:=pSheet
     wkbFinal.Close (False)
     Set dSheet = Worksheets("final")
