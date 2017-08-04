@@ -1,8 +1,8 @@
 Attribute VB_Name = "DailyInventoryTable"
 Sub DailyInventory()
     Dim file As Variant, path As String
-    Dim fileNames As New Collection
-    Dim productInformationSheet As String
+    Dim file_names As New Collection
+    Dim product_information_sheet As String
     Dim username As String
     
     username = (Environ$("Username"))
@@ -12,11 +12,11 @@ Sub DailyInventory()
     'get each file in the folder and store into collection
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
-            productInformationSheet = file
+            product_information_sheet = file
         ElseIf InStr(1, file, "log") > 0 Then
             'skip
         Else
-            fileNames.Add file
+            file_names.Add file
         End If
         file = Dir
     Loop
@@ -38,25 +38,25 @@ Sub DailyInventory()
     Dim i As Long, lengthMaster As Long, lengthGet As Long
     Set shtMaster = ActiveWorkbook.ActiveSheet
     
-    For i = 1 To fileNames.Count
+    For i = 1 To file_names.Count
         'open the excel file
-        Set wkbGet = Workbooks.Open(path & fileNames(i))
+        Set wkbGet = Workbooks.Open(path & file_names(i))
         Set shtGet = wkbGet.Sheets(1)
         
         'run correct macro and create table in workbook
-        If InStr(1, fileNames(i), "AGED") > 0 Then
+        If InStr(1, file_names(i), "AGED") > 0 Then
             cityInventory
-        ElseIf InStr(1, fileNames(i), "Joliet") > 0 Then
+        ElseIf InStr(1, file_names(i), "Joliet") > 0 Then
             SaddlecreekInventory (False)
-        ElseIf InStr(1, fileNames(i), "Modesto") > 0 Then
+        ElseIf InStr(1, file_names(i), "Modesto") > 0 Then
             SaddlecreekInventory (True)
-        ElseIf InStr(1, fileNames(i), "New") > 0 Then
+        ElseIf InStr(1, file_names(i), "New") > 0 Then
             newHolland
-        ElseIf InStr(1, fileNames(i), "Strohs") > 0 Then
+        ElseIf InStr(1, file_names(i), "Strohs") > 0 Then
             brewDetroit
-        ElseIf InStr(1, fileNames(i), "lindner") > 0 Then
+        ElseIf InStr(1, file_names(i), "lindner") > 0 Then
             Lindner
-        ElseIf InStr(1, fileNames(i), "InventoryReport") > 0 Then
+        ElseIf InStr(1, file_names(i), "InventoryReport") > 0 Then
             'do nothing
         Else
             vermont
@@ -75,20 +75,20 @@ Sub DailyInventory()
 
 '***********************************************************************************
 'ADD SHIPBY DATE, AX# AND PROD8
-    Dim wkbProdInfo As Workbook, shtProdInfoData As Worksheet, shtProdInfoDate As Worksheet
-    productInformationSheet = "ProductInformation.xlsm"
-    Set wkbProdInfo = Workbooks.Open(path & productInformationSheet)
-    Set shtProdInfoData = wkbProdInfo.Sheets("Data")
-    Set shtProdInfoDate = wkbProdInfo.Sheets("ShipBy")
+    Dim wkb_product_information As Workbook, sht_product_information_data As Worksheet, sht_product_information_date As Worksheet
+    product_information_sheet = "ProductInformation.xlsm"
+    Set wkb_product_information = Workbooks.Open(path & product_information_sheet)
+    Set sht_product_information_data = wkb_product_information.Sheets("Data")
+    Set sht_product_information_date = wkb_product_information.Sheets("ShipBy")
     
     'shtMaster contains standard table
     'shtProdInfo(1) is the table of prod8 and ax
     'shtprodinfo(2) is table of ship by dates
     
     Dim Brewery As String
-    Dim axNum As String, sku As String, prod8 As String, name As String
+    Dim ax_number As String, sku As String, prod8 As String, name As String
     Dim j As Long
-    axNum = ""
+    ax_number = ""
     sku = ""
     prod8 = ""
     name = ""
@@ -100,18 +100,18 @@ Sub DailyInventory()
         'if a city brewery
         If Brewery = "La Crosse, WI" Or Brewery = "Memphis, TN" Or Brewery = "Latrobe, PA" Then
             'get the ax number and sku from table
-            axNum = shtMaster.Cells(i, 2)
+            ax_number = shtMaster.Cells(i, 2)
             sku = shtMaster.Cells(i, 7)
             On Error Resume Next
             'perform a vlookup, ax number as lookup value, in the productInformation excel workbook
             'return the prod8, exact match
-            shtMaster.Cells(i, 3) = shtProdInfoData.Application.WorksheetFunction.VLookup( _
-            axNum, shtProdInfoData.Range("A1:C1000"), 3, 0)
+            shtMaster.Cells(i, 3) = sht_product_information_data.Application.WorksheetFunction.VLookup( _
+            ax_number, sht_product_information_data.Range("A1:C1000"), 3, 0)
             'if it does not find the ax number, then perform a vlookup with the sku instead
             If Err.Number <> 0 Then
                 'try to find prod8 with sku
-                shtMaster.Cells(i, 3) = shtProdInfoData.Application.WorksheetFunction.VLookup( _
-                sku, shtProdInfoData.Range("B2:C1000"), 2, 0)
+                shtMaster.Cells(i, 3) = sht_product_information_data.Application.WorksheetFunction.VLookup( _
+                sku, sht_product_information_data.Range("B2:C1000"), 2, 0)
                 'if it still does not find it, input N/A
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 3) = "N/A"
@@ -125,10 +125,10 @@ Sub DailyInventory()
             On Error Resume Next
             'perform an index match with the prod8 as the lookup value
             'return the ax number
-            With shtProdInfoData.Application.WorksheetFunction
+            With sht_product_information_data.Application.WorksheetFunction
                 shtMaster.Cells(i, 2) = _
-                .Index(shtProdInfoData.Range("A2:A1000"), _
-                .Match(prod8, shtProdInfoData.Range("C2:C1000"), 0))
+                .Index(sht_product_information_data.Range("A2:A1000"), _
+                .Match(prod8, sht_product_information_data.Range("C2:C1000"), 0))
             End With
             If Err.Number <> 0 Then
                 shtMaster.Cells(i, 2) = "N/A"
@@ -141,16 +141,16 @@ Sub DailyInventory()
             On Error Resume Next
             'perform an index match with the name to get the ax number
             'then perform a second index match to get the prod8
-            With shtProdInfoData.Application.WorksheetFunction
+            With sht_product_information_data.Application.WorksheetFunction
                 shtMaster.Cells(i, 2) = _
-                .Index(shtProdInfoData.Range("A2:A1000"), _
-                .Match(name, shtProdInfoData.Range("F2:F1000"), 0))
+                .Index(sht_product_information_data.Range("A2:A1000"), _
+                .Match(name, sht_product_information_data.Range("F2:F1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 2) = "N/A"
                 End If
                 shtMaster.Cells(i, 3) = _
-                .Index(shtProdInfoData.Range("C2:C1000"), _
-                .Match(name, shtProdInfoData.Range("F2:F1000"), 0))
+                .Index(sht_product_information_data.Range("C2:C1000"), _
+                .Match(name, sht_product_information_data.Range("F2:F1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 3) = "N/A"
                 End If
@@ -160,28 +160,28 @@ Sub DailyInventory()
             On Error Resume Next
             'perform an index match with the name to get the ax number
             'then perform a second index match to get the prod8
-            With shtProdInfoData.Application.WorksheetFunction
+            With sht_product_information_data.Application.WorksheetFunction
                 shtMaster.Cells(i, 2) = _
-                .Index(shtProdInfoData.Range("A2:A1000"), _
-                .Match(name, shtProdInfoData.Range("F2:F1000"), 0))
+                .Index(sht_product_information_data.Range("A2:A1000"), _
+                .Match(name, sht_product_information_data.Range("F2:F1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 2) = "N/A"
                 End If
                 shtMaster.Cells(i, 3) = _
-                .Index(shtProdInfoData.Range("C2:C1000"), _
-                .Match(name, shtProdInfoData.Range("F2:F1000"), 0))
+                .Index(sht_product_information_data.Range("C2:C1000"), _
+                .Match(name, sht_product_information_data.Range("F2:F1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 3) = "N/A"
                 End If
             End With
         ElseIf Brewery = "Lindner" Then
-            axNum = shtMaster.Cells(i, 2)
+            ax_number = shtMaster.Cells(i, 2)
             On Error Resume Next
             'perform an index match to get the prod8
-            With shtProdInfoData.Application.WorksheetFunction
+            With sht_product_information_data.Application.WorksheetFunction
                 shtMaster.Cells(i, 3) = _
-                .Index(shtProdInfoData.Range("C2:C1000"), _
-                .Match(axNum, shtProdInfoData.Range("A2:A1000"), 0))
+                .Index(sht_product_information_data.Range("C2:C1000"), _
+                .Match(ax_number, sht_product_information_data.Range("A2:A1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 3) = "N/A"
                 End If
@@ -191,10 +191,10 @@ Sub DailyInventory()
             prod8 = shtMaster.Cells(i, 3)
             'perform an index match with the prod8 to get the ax number
             On Error Resume Next
-            With shtProdInfoData.Application.WorksheetFunction
+            With sht_product_information_data.Application.WorksheetFunction
                 shtMaster.Cells(i, 2) = _
-                .Index(shtProdInfoData.Range("A2:A1000"), _
-                .Match(prod8, shtProdInfoData.Range("C2:C1000"), 0))
+                .Index(sht_product_information_data.Range("A2:A1000"), _
+                .Match(prod8, sht_product_information_data.Range("C2:C1000"), 0))
                 If Err.Number <> 0 Then
                     shtMaster.Cells(i, 2) = 0
                 End If
@@ -204,11 +204,11 @@ Sub DailyInventory()
         'get the shipBy date
         name = shtMaster.Cells(i, 8).Value 'name of product
         'get numbers of cells in the shipby date table
-        M = shtProdInfoDate.Cells(Rows.Count, 1).End(xlUp).Row
+        M = sht_product_information_date.Cells(Rows.Count, 1).End(xlUp).Row
         For j = 2 To M
-            If InStr(1, name, shtProdInfoDate.Cells(j, 1).Text) > 0 Then
+            If InStr(1, name, sht_product_information_date.Cells(j, 1).Text) > 0 Then
                 shtMaster.Cells(i, 6).Value = shtMaster.Cells(i, 5).Value + _
-                shtProdInfoDate.Cells(j, 2).Value
+                sht_product_information_date.Cells(j, 2).Value
                 GoTo foundShipBy
             End If
         Next j
@@ -223,9 +223,9 @@ foundShipBy:
     
     'ADD PRODUCT DESCRIPTION
     For i = 2 To n
-        axNum = shtMaster.Cells(i, 2).Value
+        ax_number = shtMaster.Cells(i, 2).Value
         prod8 = shtMaster.Cells(i, 3).Value
-        If axNum = "N/A" Then
+        If ax_number = "N/A" Then
             If prod8 = "N/A" Then
                 GoTo default
             Else
@@ -235,13 +235,13 @@ foundShipBy:
         On Error Resume Next
             'perform a vlookup, ax number as lookup value, in the productInformation excel workbook
             'return the description, exact match
-            shtMaster.Cells(i, 9) = shtProdInfoData.Application.WorksheetFunction.VLookup( _
-            axNum, shtProdInfoData.Range("A2:D1000"), 4, 0)
+            shtMaster.Cells(i, 9) = sht_product_information_data.Application.WorksheetFunction.VLookup( _
+            ax_number, sht_product_information_data.Range("A2:D1000"), 4, 0)
             'if it does not find the ax number, then perform a vlookup with the prod8 instead
             If Err.Number <> 0 Then
 prod8Search:
-                shtMaster.Cells(i, 9) = shtProdInfoData.Application.WorksheetFunction.VLookup( _
-                prod8, shtProdInfoData.Range("C2:D1000"), 2, 0)
+                shtMaster.Cells(i, 9) = sht_product_information_data.Application.WorksheetFunction.VLookup( _
+                prod8, sht_product_information_data.Range("C2:D1000"), 2, 0)
                 'if it still does not find it, use what is in column H
                 If Err.Number <> 0 Then
 default:
@@ -254,14 +254,14 @@ default:
     On Error GoTo 0
     
     'close the prodinfo workbook
-    wkbProdInfo.Close (False)
-    Set wkbProdInfo = Nothing
+    wkb_product_information.Close (False)
+    Set wkb_product_information = Nothing
     Set wkbGet = Nothing
     
     'create table with dates
     DailyInventoryTableDates
     
-    'Sort sheet by axnum for efficiently creating new sheet
+    'Sort sheet by ax_number for efficiently creating new sheet
     With shtMaster.ListObjects(1).Sort
         .SortFields.Clear
         .SortFields.Add Key:=Range("Table1[AX '#]"), SortOn:=xlSortOnValues, _
@@ -284,15 +284,13 @@ End Sub
 
 '**************************************************************************
 'SADDLECREEK
-
-    'if boolean modesto is true, then 1 year needs to be subtracted from the dates
+'if boolean modesto is true, then 1 year needs to be subtracted from the dates
 Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     'Arrays to be filled with data
-    Dim itemArr() As String, itemArrSize As Integer
-    Dim skuArr() As String
-    Dim itemStartCellArr() As Integer
-    Dim itemEndCellArr() As Integer
-    Dim numProdDatesArr() As Integer, numProdDatesArrSize As Integer
+    Dim item_array() As String, item_array_size As Integer
+    Dim SKU_array() As String
+    Dim item_start_cell_array() As Integer
+    Dim item_end_cell_array() As Integer
     
     '**************************************************************************
     'SetUp the excel sheet
@@ -314,71 +312,71 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     'Store #rows between each to know how many rows between items
     Dim i As Long, n As Long
     n = Cells(Rows.Count, 1).End(xlUp).Row
-    itemArrSize = 0
-    skuArrSize = 0
+    item_array_size = 0
+    SKU_arraySize = 0
     
     For i = 1 To n
         If Not IsEmpty(Cells(i, "B").Value) Then
             'increment array size
-            itemArrSize = itemArrSize + 1
+            item_array_size = item_array_size + 1
             'reallocate the arrays
-            ReDim Preserve itemArr(itemArrSize)
-            ReDim Preserve itemStartCellArr(itemArrSize)
-            ReDim Preserve itemEndCellArr(itemArrSize)
-            ReDim Preserve skuArr(itemArrSize)
+            ReDim Preserve item_array(item_array_size)
+            ReDim Preserve item_start_cell_array(item_array_size)
+            ReDim Preserve item_end_cell_array(item_array_size)
+            ReDim Preserve SKU_array(item_array_size)
 
             'add name of item to item array and start cell of that item
-            itemArr(itemArrSize - 1) = Cells(i, "B").Value
-            skuArr(itemArrSize - 1) = Cells(i, "A").Value
-            itemStartCellArr(itemArrSize - 1) = i
-            If itemArrSize > 1 Then
-                itemEndCellArr(itemArrSize - 2) = (i - 1)
+            item_array(item_array_size - 1) = Cells(i, "B").Value
+            SKU_array(item_array_size - 1) = Cells(i, "A").Value
+            item_start_cell_array(item_array_size - 1) = i
+            If item_array_size > 1 Then
+                item_end_cell_array(item_array_size - 2) = (i - 1)
             End If
         End If
     Next i
-    itemEndCellArr(itemArrSize - 1) = n
+    item_end_cell_array(item_array_size - 1) = n
     '**************************************************************************
     'Get Production Dates
     'production date arrays
-    Dim prodDates As New Collection
-    Dim thisProdDateArr() As Variant
+    Dim production_dates As New Collection
+    Dim this_production_date_array() As Variant
     
     'item index keeps track of which item the date is for
-    'thisProdDateNum keeps track of the number of production dates for
+    'number_of_production_dates keeps track of the number of production dates for
     'each individual item
-    Dim itemIndex As Long, j As Long, thisProdDateNum As Long
-    itemIndex = 0
+    Dim index_of_item As Long, j As Long, number_of_production_dates As Long
+    index_of_item = 0
     
     'Loop through Column L for production dates
-    Do While itemIndex < itemArrSize
-        itemIndex = itemIndex + 1
-        thisProdDateNum = 0
-        'reset thisProdDateNum array
-        ReDim thisProdDateArr(0)
-        For j = itemStartCellArr(itemIndex - 1) To itemEndCellArr(itemIndex - 1)
+    Do While index_of_item < item_array_size
+        index_of_item = index_of_item + 1
+        number_of_production_dates = 0
+        'reset number_of_production_dates array
+        ReDim this_production_date_array(0)
+        For j = item_start_cell_array(index_of_item - 1) To item_end_cell_array(index_of_item - 1)
             If version = 1 Then
                 If Cells(j, "L").Value <> "" Then
-                    thisProdDateNum = thisProdDateNum + 1
-                    ReDim Preserve thisProdDateArr(thisProdDateNum - 1)
+                    number_of_production_dates = number_of_production_dates + 1
+                    ReDim Preserve this_production_date_array(number_of_production_dates - 1)
                     If Modesto Then
-                        thisProdDateArr(thisProdDateNum - 1) = DateAdd("yyyy", -1, Int(Cells(j, "L").Value))
+                        this_production_date_array(number_of_production_dates - 1) = DateAdd("yyyy", -1, Int(Cells(j, "L").Value))
                     Else
-                        thisProdDateArr(thisProdDateNum - 1) = Int(Cells(j, "L").Value)
+                        this_production_date_array(number_of_production_dates - 1) = Int(Cells(j, "L").Value)
                     End If
                 End If
             Else
                 If Cells(j, "K").Value <> "" Then
-                    thisProdDateNum = thisProdDateNum + 1
-                    ReDim Preserve thisProdDateArr(thisProdDateNum - 1)
+                    number_of_production_dates = number_of_production_dates + 1
+                    ReDim Preserve this_production_date_array(number_of_production_dates - 1)
                     If Modesto Then
-                        thisProdDateArr(thisProdDateNum - 1) = DateAdd("yyyy", -1, Int(Cells(j, "K").Value))
+                        this_production_date_array(number_of_production_dates - 1) = DateAdd("yyyy", -1, Int(Cells(j, "K").Value))
                     Else
-                        thisProdDateArr(thisProdDateNum - 1) = Int(Cells(j, "K").Value)
+                        this_production_date_array(number_of_production_dates - 1) = Int(Cells(j, "K").Value)
                     End If
                 End If
             End If
         Next j
-        prodDates.Add (thisProdDateArr)
+        production_dates.Add (this_production_date_array)
     Loop
     '**************************************************************************
     'Get Inventory Totals
@@ -386,20 +384,20 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     Dim thisTotalArr() As Variant
     
     Dim thisTotalNum As Long
-    itemIndex = 0
+    index_of_item = 0
     
     'Loop through Column S to get # units for each production date
-    Do While itemIndex < itemArrSize
-        itemIndex = itemIndex + 1
+    Do While index_of_item < item_array_size
+        index_of_item = index_of_item + 1
         thisTotalNum = 0
         'reset this item's totals array
         ReDim thisTotalArr(0)
-        For j = itemStartCellArr(itemIndex - 1) To itemEndCellArr(itemIndex - 1)
+        For j = item_start_cell_array(index_of_item - 1) To item_end_cell_array(index_of_item - 1)
             If version = 1 Then
                 'if the font is bold
                 If Cells(j, "S").Font.Bold = True Then
                     'but it is not the grand total for that item
-                    If j <> itemEndCellArr(itemIndex - 1) Then
+                    If j <> item_end_cell_array(index_of_item - 1) Then
                         'add the total to this item's array
                         thisTotalNum = thisTotalNum + 1
                         ReDim Preserve thisTotalArr(thisTotalNum - 1)
@@ -410,7 +408,7 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
                 'if the font is bold
                 If Cells(j, "R").Font.Bold = True Then
                     'but it is not the grand total for that item
-                    If j <> itemEndCellArr(itemIndex - 1) Then
+                    If j <> item_end_cell_array(index_of_item - 1) Then
                         'add the total to this item's array
                         thisTotalNum = thisTotalNum + 1
                         ReDim Preserve thisTotalArr(thisTotalNum - 1)
@@ -429,7 +427,7 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     'i keeps track of which item
     i = 1
     'Add Dates and number produced at that date to final Inventory
-    For Each collectionItem In prodDates
+    For Each collectionItem In production_dates
         'j keeps track of array index of each item
         j = 0
         Set itemInv = New Scripting.Dictionary
@@ -464,9 +462,9 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
             Else
                 Cells(j, 1).Value = "Joliet"
             End If
-            Cells(j, 3).Value = skuArr(i)
-            Cells(j, 7).Value = skuArr(i)
-            Cells(j, 8).Value = itemArr(i)
+            Cells(j, 3).Value = SKU_array(i)
+            Cells(j, 7).Value = SKU_array(i)
+            Cells(j, 8).Value = item_array(i)
             Cells(j, 5).Value = Key
             Cells(j, 4).Value = collectionItem(Key)
             j = j + 1
@@ -478,19 +476,19 @@ End Sub
 '**************************************************************************
 'LINDNER
 Private Sub Lindner()
-    Dim bName As String
-    Dim axNum As New Collection
-    Dim prodName As New Collection
+    Dim brewery_name As String
+    Dim ax_number As New Collection
+    Dim product_names As New Collection
     Dim quantity As New Collection
     
-    bName = "Lindner"
-    pDate = "NO DATA"
+    brewery_name = "Lindner"
+    production_date = "NO DATA"
     'get number of rows in table
     n = Cells(Rows.Count, "A").End(xlUp).Row
     'loop through table and extract information
     For i = 2 To n
-        axNum.Add Cells(i, "B").Value
-        prodName.Add Cells(i, "C").Value
+        ax_number.Add Cells(i, "B").Value
+        product_names.Add Cells(i, "C").Value
         quantity.Add Cells(i, "D").Value
     Next i
     
@@ -498,12 +496,12 @@ Private Sub Lindner()
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
-    For j = 1 To prodName.Count
-        Cells(j, 1).Value = bName
-        Cells(j, 8).Value = prodName(j)
-        Cells(j, 5).Value = pDate
+    For j = 1 To product_names.Count
+        Cells(j, 1).Value = brewery_name
+        Cells(j, 8).Value = product_names(j)
+        Cells(j, 5).Value = production_date
         Cells(j, 4).Value = quantity(j)
-        Cells(j, 2).Value = axNum(j)
+        Cells(j, 2).Value = ax_number(j)
     Next j
 End Sub
 
@@ -514,50 +512,50 @@ Private Sub cityInventory()
     ActiveSheet.Cells.UnMerge
     ActiveSheet.Cells.WrapText = False
     'get brewery name
-    Dim bName As String
-    bName = Cells(2, 1).Value
+    Dim brewery_name As String
+    brewery_name = Cells(2, 1).Value
     '**************************************************************************
     'Get Product Names
     'Create dictionary for product names
-    Dim prodNames As New Scripting.Dictionary
-    Dim axNum As New Collection
-    Dim cityNum As New Collection
+    Dim product_names As New Scripting.Dictionary
+    Dim ax_number As New Collection
+    Dim city_brewery_id As New Collection
     Dim i As Long, n As Long, j As Long
     n = Cells(Rows.Count, "E").End(xlUp).Row
     For i = 7 To n
-        If prodNames.Exists(Cells(i, "E").Value) Then
+        If product_names.Exists(Cells(i, "E").Value) Then
             'increment count
-            prodNames(Cells(i, "E").Value) = prodNames(Cells(i, "E").Value) + 1
+            product_names(Cells(i, "E").Value) = product_names(Cells(i, "E").Value) + 1
         Else
             'add the product as the key
-            prodNames.Add Cells(i, "E").Value, 1
-            axNum.Add Cells(i, "D")
-            cityNum.Add Cells(i, "C")
+            product_names.Add Cells(i, "E").Value, 1
+            ax_number.Add Cells(i, "D")
+            city_brewery_id.Add Cells(i, "C")
         End If
     Next i
     '**************************************************************************
     'Get Production Dates and Quantities
     Dim inventory As New Collection
-    Dim dateNum As Scripting.Dictionary
+    Dim number_units_per_date As Scripting.Dictionary
     Dim prodCount As Integer
     
     i = 7
-    For Each Key In prodNames.Keys()
-        Set dateNum = New Scripting.Dictionary
+    For Each Key In product_names.Keys()
+        Set number_units_per_date = New Scripting.Dictionary
         'number of productions for each item
-        prodCount = prodNames(Key)
+        prodCount = product_names(Key)
         For j = 1 To prodCount
             'if date is added for this product, increment amount
-            If dateNum.Exists(Cells(i, "M").Value) Then
-                dateNum(Cells(i, "M").Value) = dateNum(Cells(i, "M").Value) + Cells(i, "J").Value
+            If number_units_per_date.Exists(Cells(i, "M").Value) Then
+                number_units_per_date(Cells(i, "M").Value) = number_units_per_date(Cells(i, "M").Value) + Cells(i, "J").Value
                 i = i + 1
             'otherwise add date and count
             Else
-                dateNum.Add Cells(i, "M").Value, Cells(i, "J").Value
+                number_units_per_date.Add Cells(i, "M").Value, Cells(i, "J").Value
                 i = i + 1
             End If
         Next j
-        inventory.Add dateNum
+        inventory.Add number_units_per_date
     Next Key
     '**************************************************************************
     'Output information
@@ -568,12 +566,12 @@ Private Sub cityInventory()
     k = 1 'to keep track of item
     
     'writes out every product name and the brewery
-    For Each Key In prodNames.Keys()
+    For Each Key In product_names.Keys()
         For i = 1 To inventory(k).Count
             Cells(j, 8).Value = Key
-            Cells(j, 1).Value = bName
-            Cells(j, 7).Value = cityNum(k)
-            Cells(j, 2).Value = axNum(k)
+            Cells(j, 1).Value = brewery_name
+            Cells(j, 7).Value = city_brewery_id(k)
+            Cells(j, 2).Value = ax_number(k)
             j = j + 1
         Next i
         k = k + 1
@@ -606,20 +604,19 @@ End Sub
 
 '******************************************************************************
 'BREW DETROIT
-
 Private Sub brewDetroit()
     'get brewery name
-    Dim bName As String
-    bName = Trim(Cells(4, "J").Value)
+    Dim brewery_name As String
+    brewery_name = Trim(Cells(4, "J").Value)
     
     'Get product name
-    Dim prodName As New Collection
-    Dim prod As String
+    Dim product_names As New Collection
+    Dim product_name As String
     Dim i As Long
     i = 6
     Do Until Cells(i, 1).Value = "Totals"
-        prod = Cells(i, 1).Value & Cells(i, 2).Value & " " & Cells(i, 3).Value
-        prodName.Add prod
+        product_name = Cells(i, 1).Value & Cells(i, 2).Value & " " & Cells(i, 3).Value
+        product_names.Add product_name
         i = i + 1
     Loop
     
@@ -629,9 +626,9 @@ Private Sub brewDetroit()
 
     'Set # of Units for each product
     i = 6
-    Dim numUnits As New Collection
+    Dim number_of_units As New Collection
     Do Until Cells(i, "J").Font.Bold = True
-        numUnits.Add Cells(i, "J").Value
+        number_of_units.Add Cells(i, "J").Value
         i = i + 1
     Loop
     '**************************************************************************
@@ -639,11 +636,11 @@ Private Sub brewDetroit()
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
-    For i = 1 To prodName.Count
-        Cells(i, 1).Value = bName
-        Cells(i, 8).Value = prodName(i)
+    For i = 1 To product_names.Count
+        Cells(i, 1).Value = brewery_name
+        Cells(i, 8).Value = product_names(i)
         Cells(i, 5).Value = prodDate
-        Cells(i, 4).Value = numUnits(i)
+        Cells(i, 4).Value = number_of_units(i)
     Next i
 End Sub
 
@@ -653,12 +650,12 @@ Private Sub vermont()
     'unmerge all cells and unwrap text
     ActiveSheet.Cells.UnMerge
     'get brewery name
-    Dim bName As String, pDate As String
-    pDate = "NO DATA"
-    bName = "Vermont Cider"
+    Dim brewery_name As String, production_date As String
+    production_date = "NO DATA"
+    brewery_name = "Vermont Cider"
     
     'Get product names
-    Dim prodNames As New Collection
+    Dim product_names As New Collection
     Dim prod8 As New Collection
     Dim r As Range
     Set r = ActiveSheet.Range("A1:Z400")
@@ -674,14 +671,14 @@ Private Sub vermont()
     
     n = Cells(Rows.Count, "H").End(xlUp).Row
     For i = 9 To n + 1
-        prodNames.Add Cells(i, "H").Value
+        product_names.Add Cells(i, "H").Value
         prod8.Add Cells(i, "F").Value
     Next i
     
     'Get number of units
-    Dim numUnits As New Collection
+    Dim number_of_units As New Collection
     For i = 9 To n
-        numUnits.Add Cells(i, "J").Value
+        number_of_units.Add Cells(i, "J").Value
     Next i
     '**************************************************************************
     'Output Data to standard table
@@ -690,12 +687,12 @@ Private Sub vermont()
     ws.name = "Table"
     Dim j As Integer
     j = 1
-    For i = 2 To prodNames.Count
-        Cells(i - 1, 1).Value = bName
+    For i = 2 To product_names.Count
+        Cells(i - 1, 1).Value = brewery_name
         Cells(i - 1, 3).Value = prod8(j)
-        Cells(i - 1, 8).Value = prodNames(j)
-        Cells(i - 1, 5).Value = pDate
-        Cells(i - 1, 4).Value = numUnits(j)
+        Cells(i - 1, 8).Value = product_names(j)
+        Cells(i - 1, 5).Value = production_date
+        Cells(i - 1, 4).Value = number_of_units(j)
         j = j + 1
     Next i
 End Sub
@@ -703,18 +700,18 @@ End Sub
 '**************************************************************************
 ' NEW HOLLAND
 Private Sub newHolland()
-    Dim bName As String
-    bName = "New Holland"
+    Dim brewery_name As String
+    brewery_name = "New Holland"
     'Get product names, production dates, and units
-    Dim prodNames As New Collection
-    Dim prodDates As New Collection
+    Dim product_names As New Collection
+    Dim production_dates As New Collection
     Dim units As New Collection
     Dim i As Long, n As Long
     
     n = ActiveSheet.Cells(Rows.Count, 1).End(xlUp).Row
     For i = 2 To n
-        prodNames.Add Cells(i, "E").Value
-        prodDates.Add Cells(i, "B").Value
+        product_names.Add Cells(i, "E").Value
+        production_dates.Add Cells(i, "B").Value
         units.Add Cells(i, "F").Value
     Next i
     '**************************************************************************
@@ -724,10 +721,10 @@ Private Sub newHolland()
     ws.name = "Table"
     Dim j As Integer
     j = 1
-    For i = 2 To prodNames.Count + 1
-        Cells(i - 1, 1).Value = bName
-        Cells(i - 1, 8).Value = prodNames(j)
-        Cells(i - 1, 5).Value = prodDates(j)
+    For i = 2 To product_names.Count + 1
+        Cells(i - 1, 1).Value = brewery_name
+        Cells(i - 1, 8).Value = product_names(j)
+        Cells(i - 1, 5).Value = production_dates(j)
         Cells(i - 1, 4).Value = units(j)
         j = j + 1
     Next i
@@ -756,8 +753,8 @@ Private Sub DailyInventoryNoDates()
     'Create array for data
     Dim i As Long, lastRow As Long
     
-    Dim bName As String, axNum As String, prod8 As String
-    Dim numUnits As Integer, prodDescr As String, inc As Double, orig As Double
+    Dim brewery_name As String, ax_number As String, prod8 As String
+    Dim number_of_units As Integer, product_description As String, inc As Double, orig As Double
     
     Dim data As New Collection ''''''''''''''''''''
     Dim arr(4)
@@ -775,16 +772,16 @@ Private Sub DailyInventoryNoDates()
     lastRow = dataSheet.Cells(Rows.Count, 1).End(xlUp).Row
     For i = 3 To lastRow
         'get brewery name
-        bName = dataSheet.Cells(i, 1).Value
+        brewery_name = dataSheet.Cells(i, 1).Value
         'if brewery on this iteration is equal to last element added to collection
-        If bName = data(data.Count)(0) Then
-            'get axnum
-            axNum = dataSheet.Cells(i, 2).Value
-            If axNum = 0 Then
+        If brewery_name = data(data.Count)(0) Then
+            'get ax_number
+            ax_number = dataSheet.Cells(i, 2).Value
+            If ax_number = 0 Then
                 prod8 = dataSheet.Cells(i, 3).Value
                 If prod8 = "N/A" Then
-                    prodDescr = dataSheet.Cells(i, 9).Value
-                    If prodDescr = data(data.Count)(4) Then
+                    product_description = dataSheet.Cells(i, 9).Value
+                    If product_description = data(data.Count)(4) Then
                         GoTo increment
                     Else
                         GoTo addNew
@@ -794,8 +791,8 @@ Private Sub DailyInventoryNoDates()
                 Else
                     GoTo addNew
                 End If
-            'if axnum = last axnum added
-            ElseIf axNum = data(data.Count)(1) Then
+            'if ax_number = last ax_number added
+            ElseIf ax_number = data(data.Count)(1) Then
                 GoTo increment
             'otherwise add new entry
             Else
@@ -812,7 +809,7 @@ increment:
       data.Add (arr)
       GoTo nextIt
 addNew:
-    arr(0) = bName
+    arr(0) = brewery_name
     'ax
     arr(1) = dataSheet.Cells(i, 2).Value
     'prod8
