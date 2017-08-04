@@ -18,7 +18,6 @@ Sub DailyInventory()
         Else
             fileNames.Add file
         End If
-        
         file = Dir
     Loop
     
@@ -33,7 +32,6 @@ Sub DailyInventory()
     Range("H1") = "Product Name"
     Range("I1") = "Product Description"
 
-    
     Application.ScreenUpdating = False
     'loop through and open each file and run macro
     Dim shtMaster As Worksheet, shtGet As Worksheet, wkbGet As Workbook
@@ -287,7 +285,7 @@ End Sub
 '**************************************************************************
 'SADDLECREEK
 
-'if boolean modesto is true, then 1 year needs to be subtracted from the dates
+    'if boolean modesto is true, then 1 year needs to be subtracted from the dates
 Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     'Arrays to be filled with data
     Dim itemArr() As String, itemArrSize As Integer
@@ -296,8 +294,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     Dim itemEndCellArr() As Integer
     Dim numProdDatesArr() As Integer, numProdDatesArrSize As Integer
     
-'**************************************************************************
-'SetUp the excel sheet
+    '**************************************************************************
+    'SetUp the excel sheet
     'Unmerge all cells to make them easier to work with
     ActiveSheet.Cells.UnMerge
     Dim version As Integer
@@ -309,8 +307,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     End If
     'delete first 6 rows for formatting
     Rows("1:6").Delete
-'**************************************************************************
-'Get the item names and SKU
+    '**************************************************************************
+    'Get the item names and SKU
     'Loop through Column B to get each item
     'Test to make sure data is in the cell before copying
     'Store #rows between each to know how many rows between items
@@ -339,8 +337,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
         End If
     Next i
     itemEndCellArr(itemArrSize - 1) = n
-'**************************************************************************
-'Get Production Dates
+    '**************************************************************************
+    'Get Production Dates
     'production date arrays
     Dim prodDates As New Collection
     Dim thisProdDateArr() As Variant
@@ -382,8 +380,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
         Next j
         prodDates.Add (thisProdDateArr)
     Loop
-'**************************************************************************
-'Get Inventory Totals
+    '**************************************************************************
+    'Get Inventory Totals
     Dim totalByDate As New Collection
     Dim thisTotalArr() As Variant
     
@@ -423,8 +421,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
         Next j
         totalByDate.Add (thisTotalArr)
     Loop
-'**************************************************************************
-'Combine production dates and inventory totals
+    '**************************************************************************
+    'Combine production dates and inventory totals
     Dim finalInventory As New Collection
     Dim itemInv As Scripting.Dictionary
     
@@ -448,8 +446,8 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     finalInventory.Add itemInv
     i = i + 1
     Next collectionItem
-'**************************************************************************
-'Create Standard Format Excel Table With the Data
+    '**************************************************************************
+    'Create Standard Format Excel Table With the Data
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
@@ -518,8 +516,8 @@ Private Sub cityInventory()
     'get brewery name
     Dim bName As String
     bName = Cells(2, 1).Value
-'**************************************************************************
-'Get Product Names
+    '**************************************************************************
+    'Get Product Names
     'Create dictionary for product names
     Dim prodNames As New Scripting.Dictionary
     Dim axNum As New Collection
@@ -537,8 +535,8 @@ Private Sub cityInventory()
             cityNum.Add Cells(i, "C")
         End If
     Next i
-'**************************************************************************
-'Get Production Dates and Quantities
+    '**************************************************************************
+    'Get Production Dates and Quantities
     Dim inventory As New Collection
     Dim dateNum As Scripting.Dictionary
     Dim prodCount As Integer
@@ -561,8 +559,8 @@ Private Sub cityInventory()
         Next j
         inventory.Add dateNum
     Next Key
-'**************************************************************************
-'Output information
+    '**************************************************************************
+    'Output information
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
@@ -614,7 +612,7 @@ Private Sub brewDetroit()
     Dim bName As String
     bName = Trim(Cells(4, "J").Value)
     
-'Get product name
+    'Get product name
     Dim prodName As New Collection
     Dim prod As String
     Dim i As Long
@@ -625,19 +623,19 @@ Private Sub brewDetroit()
         i = i + 1
     Loop
     
-'Set N/A for date
+    'Set N/A for date
     Dim prodDate As String
     prodDate = "NO DATA"
 
-'Set # of Units for each product
+    'Set # of Units for each product
     i = 6
     Dim numUnits As New Collection
     Do Until Cells(i, "J").Font.Bold = True
         numUnits.Add Cells(i, "J").Value
         i = i + 1
     Loop
-'**************************************************************************
-'Output data to a Table
+    '**************************************************************************
+    'Output data to a Table
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
@@ -659,7 +657,7 @@ Private Sub vermont()
     pDate = "NO DATA"
     bName = "Vermont Cider"
     
-'Get product names
+    'Get product names
     Dim prodNames As New Collection
     Dim prod8 As New Collection
     Dim r As Range
@@ -680,13 +678,13 @@ Private Sub vermont()
         prod8.Add Cells(i, "F").Value
     Next i
     
-'Get number of units
+    'Get number of units
     Dim numUnits As New Collection
     For i = 9 To n
         numUnits.Add Cells(i, "J").Value
     Next i
-'**************************************************************************
-'Output Data to standard table
+    '**************************************************************************
+    'Output Data to standard table
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
@@ -707,7 +705,7 @@ End Sub
 Private Sub newHolland()
     Dim bName As String
     bName = "New Holland"
-'Get product names, production dates, and units
+    'Get product names, production dates, and units
     Dim prodNames As New Collection
     Dim prodDates As New Collection
     Dim units As New Collection
@@ -719,8 +717,8 @@ Private Sub newHolland()
         prodDates.Add Cells(i, "B").Value
         units.Add Cells(i, "F").Value
     Next i
-'**************************************************************************
-'Output information to formatted table
+    '**************************************************************************
+    'Output information to formatted table
     Dim ws As Worksheet
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
@@ -941,37 +939,4 @@ Private Sub DailyInventoryTableDates()
     ActiveWorkbook.SlicerCaches.Add2(ActiveSheet.ListObjects("Table1"), _
         "Product Description").Slicers.Add ActiveSheet, , "Product Description", "Product Description", _
         5, 660, 360, 200
-    
-    'HIDE COLUMNS
-        'ActiveSheet.Buttons.Add(510, 5, 60, 40).OnAction = "HideDate"
-        'ActiveSheet.Buttons.Add(570, 5, 60, 40).OnAction = "ShowDate"
-        
-        'With ActiveSheet.Shapes("Button 1")
-            '.Placement = xlFreeFloating
-            '.TextFrame.Characters.Text = "Hide Dates"
-        'End With
-        'With ActiveSheet.Shapes("Button 2")
-            '.Placement = xlFreeFloating
-            '.TextFrame.Characters.Text = "Show Dates"
-        'End With
-
 End Sub
-
-Private Sub HideDate()
-        Columns("E:F").EntireColumn.Hidden = True
-        ActiveSheet.Shapes("Product Description").IncrementLeft -180
-        ActiveSheet.Shapes("AX #").IncrementLeft -180
-        ActiveSheet.Shapes("Prod 8").IncrementLeft -180
-        ActiveSheet.Shapes("Button 2").IncrementLeft -180
-        ActiveSheet.Shapes("Button 1").IncrementLeft -180
-End Sub
-
-Private Sub ShowDate()
-        Columns("E:F").EntireColumn.Hidden = False
-        ActiveSheet.Shapes("Product Description").IncrementLeft 180
-        ActiveSheet.Shapes("AX #").IncrementLeft 180
-        ActiveSheet.Shapes("Prod 8").IncrementLeft 180
-        ActiveSheet.Shapes("Button 2").IncrementLeft 180
-        ActiveSheet.Shapes("Button 1").IncrementLeft 180
-End Sub
-
