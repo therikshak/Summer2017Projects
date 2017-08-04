@@ -197,6 +197,9 @@ Sub DailyInventory()
                 shtMaster.Cells(i, 2) = _
                 .Index(shtProdInfoData.Range("A2:A1000"), _
                 .Match(prod8, shtProdInfoData.Range("C2:C1000"), 0))
+                If Err.Number <> 0 Then
+                    shtMaster.Cells(i, 2) = 0
+                End If
             End With
             GoTo vermont
         End If
@@ -648,7 +651,6 @@ End Sub
 
 '**************************************************************************
 'VERMONT
-
 Private Sub vermont()
     'unmerge all cells and unwrap text
     ActiveSheet.Cells.UnMerge
@@ -702,7 +704,6 @@ End Sub
 
 '**************************************************************************
 ' NEW HOLLAND
-
 Private Sub newHolland()
     Dim bName As String
     bName = "New Holland"
@@ -736,7 +737,6 @@ End Sub
 
 '**************************************************************************
 'CREATE MINIMAL TABLE
-
 Private Sub DailyInventoryNoDates()
     'newSheet is for table with no dates
     'dataSheet is the existing table with all info
