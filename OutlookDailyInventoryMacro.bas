@@ -1,6 +1,5 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
 Public Sub completeDailyInventory()
-' ******** NEW
     ' log what is happening in log.txt
     Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
     username = (Environ$("Username"))
@@ -9,7 +8,6 @@ Public Sub completeDailyInventory()
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
-' *********** NEW
 
     Print #TextFile, "Before DeleteReports"
     
@@ -43,8 +41,10 @@ Public Sub completeDailyInventory()
     
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
+    Dim successful_pivot As Boolean
     If successfulDownload Then
-        CreatePivot
+        successful_pivot = CreatePivot
+        
         Print #TextFile, "CreatePivot called"
     End If
     
@@ -314,7 +314,7 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
 End Sub
 
 'create the inventory report
-Private Sub CreatePivot()
+Private Function CreatePivot() As Boolean
     Dim xlApp As Excel.Application
     Dim xlWb As Workbook, xlWs As Object, wlWb2 As Workbook
     Dim username As String
@@ -330,6 +330,7 @@ Private Sub CreatePivot()
     
     'start a new instance of excel
     Set xlApp = New Excel.Application
+    On Error GoTo noPersonal
     Set xlwb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
     Set xlWb = xlApp.Workbooks.Add
     Set xlWs = xlWb.Sheets(1)
@@ -349,7 +350,8 @@ Private Sub CreatePivot()
     'don't visibly open excel
     xlApp.Visible = False
     'run the inventory macro from the PERSONAL workbook
-    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory"
+    On Error GoTo failedMacro
+    xlWb.Application.Run "PERSONAL.XLSB!DailyInventor"
     Print #TextFile, "Macro Run and finished"
     
     'save the excel file and close
@@ -365,7 +367,31 @@ Private Sub CreatePivot()
     
     Print #TextFile, "Excel saved, closed, and quit"
     Close TextFile
-End Sub
+    CreatePivot = True
+    Exit Function
+    
+noPersonal:
+    Set xlApp = Nothing
+    Print #TextFile, "noPersonal error raised"
+    Close TextFile
+    MsgBox "Could not find a PERSONAL workbook at C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb"
+    CreatePivot = False
+    Exit Function
+    
+failedMacro:
+    xlWb.Close False
+    xlwb2.Close False
+    xlApp.Quit
+    Set xlApp = Nothing
+    Set xlWb = Nothing
+    Set xlWs = Nothing
+    Set xlwb2 = Nothing
+    Print #TextFile, "failedMacro error raised"
+    Close TextFile
+    MsgBox "Create the table failed"
+    CreatePivot = False
+    
+End Function
 
 ' move all of the old reports to the old reports folder
 Private Sub moveOld()
@@ -393,7 +419,7 @@ End Sub
 
 'On start up create an appointment to trigger the inventory report to run
 Private Sub Application_Startup()
-  CreateAppointment
+  'CreateAppointment
 End Sub
 
 ' If a reminder pops up check it and if it is the "Run Inventory" macro, then run the inventory report
