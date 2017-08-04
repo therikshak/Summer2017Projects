@@ -67,6 +67,7 @@ Private Function DeleteReports() As Boolean
     'path to the folder
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
+    ' get todays date
     Dim todayDate As Date, m As String, d As String, y As String, combinedDate As String
     todayDate = DateValue(Date)
     m = month(todayDate)
@@ -82,10 +83,11 @@ Private Function DeleteReports() As Boolean
         ElseIf InStr(1, file, combinedDate) > 0 Then
             'skip deleting report if it is today's and macro was run again
             'exit macro as it will cause an error
+            ' pass true back to the variable already ran
             DeleteReports = True
             Exit Function
         ElseIf InStr(1, file, "General") > 0 Then
-            ' skip
+            ' skip deleting the general log
         Else
             'delete the file
             Kill path & file
@@ -93,6 +95,7 @@ Private Function DeleteReports() As Boolean
         'get next file
         file = Dir
     Loop
+    ' pass false back to the variable already ran
     DeleteReports = False
     Exit Function
 End Function
@@ -103,10 +106,12 @@ Private Sub moveLinder()
     Dim FSO As Object
     Set FSO = CreateObject("Scripting.Filesystemobject")
     
+    ' get the path to my documents and the sharepoint folder
     username = (Environ$("Username"))
     documentsFolder = "C:\Users\" & username & "\Documents\lindner.csv"
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
+    ' move from documents to the sharepoint folder
     FSO.MoveFile Source:=documentsFolder, Destination:=saveFolder
 
 End Sub
