@@ -9,6 +9,13 @@ Sub DailyInventory()
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     file = Dir(path)
     
+    'LOGGING
+    Dim logPath As String, TextFile As Integer
+    logPath = path & "logExcelMacro.txt"
+    TextFile = FreeFile
+    Open logPath For Output As TextFile
+    Print #TextFile, Now
+    
     'get each file in the folder and store into collection
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
@@ -17,6 +24,7 @@ Sub DailyInventory()
             'skip
         Else
             file_names.Add file
+            Print #TextFile, "file name added: " & file
         End If
         file = Dir
     Loop
@@ -45,20 +53,27 @@ Sub DailyInventory()
         
         'run correct macro and create table in workbook
         If InStr(1, file_names(i), "AGED") > 0 Then
+            Print #TextFile, "calling city macro"
             cityInventory
         ElseIf InStr(1, file_names(i), "Joliet") > 0 Then
+            Print #TextFile, "calling saddlecreek macro"
             SaddlecreekInventory (False)
         ElseIf InStr(1, file_names(i), "Modesto") > 0 Then
+            Print #TextFile, "calling saddlecreek macro"
             SaddlecreekInventory (True)
         ElseIf InStr(1, file_names(i), "New") > 0 Then
+            Print #TextFile, "calling new holland macro"
             newHolland
         ElseIf InStr(1, file_names(i), "Strohs") > 0 Then
+            Print #TextFile, "calling brew detroit macro"
             brewDetroit
         ElseIf InStr(1, file_names(i), "lindner") > 0 Then
+            Print #TextFile, "calling lindner macro"
             Lindner
         ElseIf InStr(1, file_names(i), "InventoryReport") > 0 Then
             'do nothing
         Else
+            Print #TextFile, "calling vermont macro"
             vermont
         End If
         'put data into master
@@ -70,6 +85,7 @@ Sub DailyInventory()
             lengthMaster = shtMaster.Cells(Rows.Count, 1).End(xlUp).Row + 1
             shtGet.Range("A1:H" & lengthGet).Copy Destination:=shtMaster.Cells(lengthMaster, "A")
         End If
+        Print #TextFile, "copied file: " & file_names(i) & " to master"
         wkbGet.Close (False)
     Next i
 
@@ -99,6 +115,7 @@ Sub DailyInventory()
         Brewery = shtMaster.Cells(i, 1).Text
         'if a city brewery
         If Brewery = "La Crosse, WI" Or Brewery = "Memphis, TN" Or Brewery = "Latrobe, PA" Then
+            Print #TextFile, "add city ax/prod8"
             'get the ax number and sku from table
             ax_number = shtMaster.Cells(i, 2)
             sku = shtMaster.Cells(i, 7)
@@ -120,6 +137,7 @@ Sub DailyInventory()
             On Error GoTo 0
         'if a saddlecreek brewery
         ElseIf Brewery = "Joliet" Or Brewery = "Modesto" Then
+            Print #TextFile, "add saddlecreek ax/prod8"
             'get the prod8 from the table
             prod8 = shtMaster.Cells(i, 3)
             On Error Resume Next
@@ -129,13 +147,14 @@ Sub DailyInventory()
                 shtMaster.Cells(i, 2) = _
                 .Index(sht_product_information_data.Range("A2:A1000"), _
                 .Match(prod8, sht_product_information_data.Range("C2:C1000"), 0))
+                If Err.Number <> 0 Then
+                    shtMaster.Cells(i, 2) = "N/A"
+                End If
             End With
-            If Err.Number <> 0 Then
-                shtMaster.Cells(i, 2) = "N/A"
-            End If
             On Error GoTo 0
         'if new holland
         ElseIf Brewery = "New Holland" Then
+            Print #TextFile, "add new holland ax/prod8"
             'get the name of the product from the table
             name = shtMaster.Cells(i, 8)
             On Error Resume Next
@@ -156,6 +175,7 @@ Sub DailyInventory()
                 End If
             End With
         ElseIf Brewery = "Brew Detroit" Then
+            Print #TextFile, "add brew detroit ax/prod8"
             name = shtMaster.Cells(i, 8)
             On Error Resume Next
             'perform an index match with the name to get the ax number
@@ -175,6 +195,7 @@ Sub DailyInventory()
                 End If
             End With
         ElseIf Brewery = "Lindner" Then
+            Print #TextFile, "add lindner ax/prod8"
             ax_number = shtMaster.Cells(i, 2)
             On Error Resume Next
             'perform an index match to get the prod8
@@ -187,6 +208,7 @@ Sub DailyInventory()
                 End If
             End With
         Else 'vermont
+            Print #TextFile, "add vermont ax/prod8"
             'get the prod8 from the table
             prod8 = shtMaster.Cells(i, 3)
             'perform an index match with the prod8 to get the ax number
@@ -258,6 +280,7 @@ default:
     Set wkb_product_information = Nothing
     Set wkbGet = Nothing
     
+    Print #TextFile, "create table with dates"
     'create table with dates
     DailyInventoryTableDates
     
@@ -278,8 +301,10 @@ default:
     End With
     
     'create minimal table without dates
+    Print #TextFile, "calling no dates sub"
     DailyInventoryNoDates
-
+    Print #TextFile, "no dates sub finished"
+Close TextFile
 End Sub
 
 '**************************************************************************
