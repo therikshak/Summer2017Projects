@@ -1,6 +1,6 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
 Public Sub completeDailyInventory()
-    ' log what is happening in log.txt
+    '********************* SET UP LOGGING AND SAVE FOLDER ************************
     Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
     username = (Environ$("Username"))
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
@@ -9,46 +9,51 @@ Public Sub completeDailyInventory()
     Open logPath For Output As TextFile
     Print #TextFile, Now
 
+    '********************* DELETE FILES IN FOLDER ************************
     Print #TextFile, "Before DeleteReports"
-    
     'delete everything in sharepoint folder except Product Information
     Dim alreadyRan As Boolean
     alreadyRan = DeleteReports
-    
     Print #TextFile, "After DeleteReports"
-    
     'exit macro if already run
     If alreadyRan Then
        Print #TextFile, "alreadyRan Boolean is True and caused exit"
        Exit Sub
     End If
     
+    '******************* DOWNLOAD REPORTS FROM EMAILS *********************
     Print #TextFile, "Before DownloadReports"
     'download reports from emails and save to sharepoint folder
     Dim successfulDownload As Boolean
     successfulDownload = DownloadReports
-    Print #TextFile, "After DownloadReports"
+    If Not successfulDownload Then
+        Print #TextFile, "did not download any reports"
+        Exit Sub
+    End If
     
+    '******************** LINDNER **********************
     Print #TextFile, "Before Lindner Call"
-    ' ********** NEW
     'Run Script to get Lindner inventory, this saves to Documents
     Dim wsh As Object, x As Integer
     Set wsh = VBA.CreateObject("Wscript.Shell")
     x = wsh.Run("cmd /c C:\Users\" & username & "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
     moveLinder
     Print #TextFile, "After Lindner Call"
-    ' ********** NEW
     
+    '******************** CREATE TABLE ***********************
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
     Dim successful_pivot As Boolean
-    If successfulDownload Then
-        successful_pivot = CreatePivot
-        
-        Print #TextFile, "CreatePivot called"
+    successful_pivot = CreateTable
+    If successful_pivot Then
+        Print #TextFile, "CreateTable successful"
+    Else
+        Print #TextFile, "CreateTable not successful"
+        Close TextFile
+        Exit Sub
     End If
-    
-    'move old reports
+      
+    '******************* MOVE OLD REPORT EMAILS ********************
     moveOld
     Print #TextFile, "moveOld called"
     Close TextFile
@@ -314,7 +319,7 @@ Private Sub exportToExcel(mail As Outlook.MailItem, folder As String)
 End Sub
 
 'create the inventory report
-Private Function CreatePivot() As Boolean
+Private Function CreateTable() As Boolean
     Dim xlApp As Excel.Application
     Dim xlWb As Workbook, xlWs As Object, wlWb2 As Workbook
     Dim username As String
@@ -323,7 +328,7 @@ Private Function CreatePivot() As Boolean
     ' LOGGING
     Dim saveFolder As String, logPath As String, TextFile As Integer
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
-    logPath = saveFolder & "logCreatePivot.txt"
+    logPath = saveFolder & "logCreateTable.txt"
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
@@ -367,15 +372,14 @@ Private Function CreatePivot() As Boolean
     
     Print #TextFile, "Excel saved, closed, and quit"
     Close TextFile
-    CreatePivot = True
+    CreateTable = True
     Exit Function
     
 noPersonal:
     Set xlApp = Nothing
     Print #TextFile, "noPersonal error raised"
     Close TextFile
-    MsgBox "Could not find a PERSONAL workbook at C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb"
-    CreatePivot = False
+    CreateTable = False
     Exit Function
     
 failedMacro:
@@ -388,8 +392,7 @@ failedMacro:
     Set xlwb2 = Nothing
     Print #TextFile, "failedMacro error raised"
     Close TextFile
-    MsgBox "Create the table failed"
-    CreatePivot = False
+    CreateTable = False
     
 End Function
 
@@ -439,7 +442,6 @@ Private Sub Application_Reminder(ByVal Item As Object)
     
     'Delete Appt from calendar when finished
     Item.Delete
-
 End Sub
 
 ' dismiss reminder
