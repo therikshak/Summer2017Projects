@@ -2,6 +2,7 @@ import requests
 import csv
 import urllib3
 import queue
+import os
 from requests_ntlm import HttpNtlmAuth
 from bs4 import BeautifulSoup
 
@@ -25,9 +26,12 @@ for row in table[1].find_all('tr')[1:]:
     items.append(this_item)
 
 out_file_header = ['Brewery', 'AX #', 'Description', 'Quantity']
-out_name = 'lindner.csv'
+windows_username = os.getlogin()
+start_path = r'C:\Users\\'
+end_path = r'\Desktop\Lindner_Scrape\lindner.csv'
+full_path = start_path + windows_username + end_path
 # open the csv file
-with open(out_name, 'w', newline='') as out:
+with open(full_path, 'w', newline='') as out:
     # create a csv writer
     csv_out = csv.writer(out)
     # write the header to the csv file

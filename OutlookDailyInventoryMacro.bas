@@ -18,6 +18,7 @@ Public Sub completeDailyInventory()
     'exit macro if already run
     If alreadyRan Then
        Print #TextFile, "alreadyRan Boolean is True and caused exit"
+       Close TextFile
        Exit Sub
     End If
     
@@ -28,10 +29,11 @@ Public Sub completeDailyInventory()
     successfulDownload = DownloadReports
     If Not successfulDownload Then
         Print #TextFile, "did not download any reports"
+        Close TextFile
         Exit Sub
     End If
     
-    '******************** LINDNER **********************
+    '***************************** LINDNER ********************************
     Print #TextFile, "Before Lindner Call"
     'Run Script to get Lindner inventory, this saves to Documents
     Dim wsh As Object, x As Integer
@@ -40,7 +42,7 @@ Public Sub completeDailyInventory()
     moveLinder
     Print #TextFile, "After Lindner Call"
     
-    '******************** CREATE TABLE ***********************
+    '************************** CREATE TABLE ******************************
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
     Dim successful_pivot As Boolean
@@ -102,17 +104,17 @@ End Function
 
 ' move the lindner csv to the sharepoint folder
 Private Sub moveLinder()
-    Dim username As String, documentsFolder As String, saveFolder As String
+    Dim username As String, lindner_original_location As String, saveFolder As String
     Dim FSO As Object
     Set FSO = CreateObject("Scripting.Filesystemobject")
     
     ' get the path to my documents and the sharepoint folder
     username = (Environ$("Username"))
-    documentsFolder = "C:\Users\" & username & "\Documents\lindner.csv"
+    lindner_original_location = "C:\Users\" & username & "\Desktop\Lindner_Scrape\lindner.csv"
     saveFolder = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
     
     ' move from documents to the sharepoint folder
-    FSO.MoveFile Source:=documentsFolder, Destination:=saveFolder
+    FSO.MoveFile Source:=lindner_original_location, Destination:=saveFolder
 
 End Sub
 
