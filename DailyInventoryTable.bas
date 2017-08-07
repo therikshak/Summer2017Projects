@@ -700,10 +700,22 @@ Private Sub vermont()
         prod8.Add Cells(i, "F").Value
     Next i
     
+    'check if cell j is empty to get the correct column for on hand quantity
+    Dim j_is_empty As Boolean
+    If IsEmpty(Cells(9, "J").Value) = True Then
+        j_is_empty = True
+    Else
+        j_is_empty = False
+    End If
+    
     'Get number of units
     Dim number_of_units As New Collection
     For i = 9 To n
-        number_of_units.Add Cells(i, "J").Value
+        If j_is_empty Then
+            number_of_units.Add Cells(i, "K").Value
+        Else
+            number_of_units.Add Cells(i, "J").Value
+        End If
     Next i
     '**************************************************************************
     'Output Data to standard table
