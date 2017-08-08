@@ -709,7 +709,7 @@ Private Sub vermont()
     brewery_name = "Vermont Cider"
     
     'Get product names
-    Dim product_names As New Collection
+    Dim product_names As New Collection, n As Long
     Dim prod8 As New Collection
     Dim r As Range
     Set r = ActiveSheet.Range("A1:Z400")

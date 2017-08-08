@@ -1,4 +1,6 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
+Option Explicit
+
 Public Sub completeDailyInventory()
     '********************* SET UP LOGGING AND SAVE FOLDER ************************
     Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
@@ -64,7 +66,7 @@ End Sub
 'delete the old reports
 Private Function DeleteReports() As Boolean
     Dim path As String
-    Dim username As String
+    Dim username As String, file As Variant
     username = (Environ$("Username"))
     'path to the folder
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
@@ -178,7 +180,7 @@ Private Function DownloadReports() As Boolean
             ' IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
             ' check if this is the correct email and export to excel if so otherwise the email will be skipped
-                If (goodEmail(recDay, recMonth, True)) Then
+                If Not (goodEmail(recDay, recMonth, True)) Then
                     ' report comes as text in the body of the email so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
                     Print #TextFile, "saved: " & sender
@@ -189,7 +191,7 @@ Private Function DownloadReports() As Boolean
             ' if not New Holland then get the attachments
             Else
                 ' first check if the email is from today, otherwise skip it
-                If (goodEmail(recDay, recMonth, False)) Then
+                If Not (goodEmail(recDay, recMonth, False)) Then
                     ' SAVE ATTACHMENTS
                     Set attachments = Item.attachments
                     attachmentCount = attachments.Count
@@ -328,7 +330,7 @@ End Sub
 'create the inventory report
 Private Function CreateTable() As Boolean
     Dim xlApp As Excel.Application
-    Dim xlWb As Workbook, xlWs As Object, wlWb2 As Workbook
+    Dim xlWb As Workbook, xlWs As Object, xlWb2 As Workbook
     Dim username As String
     username = (Environ$("Username"))
     
@@ -343,7 +345,7 @@ Private Function CreateTable() As Boolean
     'start a new instance of excel
     Set xlApp = New Excel.Application
     On Error GoTo noPersonal
-    Set xlwb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
+    Set xlWb2 = xlApp.Workbooks.Open("C:\Users\" & username & "\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.xlsb")
     Set xlWb = xlApp.Workbooks.Add
     Set xlWs = xlWb.Sheets(1)
     Print #TextFile, "Created excel app and opened PERSONAL"
@@ -363,19 +365,19 @@ Private Function CreateTable() As Boolean
     xlApp.Visible = False
     'run the inventory macro from the PERSONAL workbook
     On Error GoTo failedMacro
-    xlWb.Application.Run "PERSONAL.XLSB!DailyInventor"
+    xlWb.Application.Run "PERSONAL.XLSB!DailyInventory"
     Print #TextFile, "Macro Run and finished"
     
     'save the excel file and close
     xlWb.SaveAs fileName
     xlWb.Close
-    xlwb2.Close
+    xlWb2.Close
     xlApp.Quit
     
     Set xlApp = Nothing
     Set xlWb = Nothing
     Set xlWs = Nothing
-    Set xlwb2 = Nothing
+    Set xlWb2 = Nothing
     
     Print #TextFile, "Excel saved, closed, and quit"
     Close TextFile
@@ -391,12 +393,12 @@ noPersonal:
     
 failedMacro:
     xlWb.Close False
-    xlwb2.Close False
+    xlWb2.Close False
     xlApp.Quit
     Set xlApp = Nothing
     Set xlWb = Nothing
     Set xlWs = Nothing
-    Set xlwb2 = Nothing
+    Set xlWb2 = Nothing
     Print #TextFile, "failedMacro error raised"
     Close TextFile
     CreateTable = False
