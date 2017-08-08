@@ -1,4 +1,6 @@
 Attribute VB_Name = "DailyInventoryTable"
+Option Explicit
+
 Sub DailyInventory()
     On Error GoTo error_handler
     Dim file As Variant, path As String
@@ -117,7 +119,7 @@ failed_open:
     
     Dim Brewery As String
     Dim ax_number As String, sku As String, prod8 As String, name As String
-    Dim j As Long
+    Dim j As Long, n As Long, M As Long
     ax_number = ""
     sku = ""
     prod8 = ""
@@ -366,7 +368,6 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     Dim i As Long, n As Long
     n = Cells(Rows.Count, 1).End(xlUp).Row
     item_array_size = 0
-    SKU_arraySize = 0
     
     For i = 1 To n
         If Not IsEmpty(Cells(i, "B").Value) Then
@@ -475,7 +476,7 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     '**************************************************************************
     'Combine production dates and inventory totals
     Dim finalInventory As New Collection
-    Dim itemInv As Scripting.Dictionary
+    Dim itemInv As Scripting.Dictionary, collectionItem As Variant, element As Variant
     
     'i keeps track of which item
     i = 1
@@ -499,7 +500,7 @@ Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     Next collectionItem
     '**************************************************************************
     'Create Standard Format Excel Table With the Data
-    Dim ws As Worksheet
+    Dim ws As Worksheet, Key As Variant
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
     'Get production dates and count for each item and print to sheet
@@ -529,7 +530,7 @@ End Sub
 '**************************************************************************
 'LINDNER
 Private Sub Lindner()
-    Dim brewery_name As String
+    Dim brewery_name As String, production_date As String, n As Long, i As Long, j As Long
     Dim ax_number As New Collection
     Dim product_names As New Collection
     Dim quantity As New Collection
@@ -573,7 +574,7 @@ Private Sub cityInventory()
     Dim product_names As New Scripting.Dictionary
     Dim ax_number As New Collection
     Dim city_brewery_id As New Collection
-    Dim i As Long, n As Long, j As Long
+    Dim i As Long, n As Long, j As Long, k As Long
     n = Cells(Rows.Count, "E").End(xlUp).Row
     For i = 7 To n
         If product_names.Exists(Cells(i, "E").Value) Then
@@ -590,7 +591,7 @@ Private Sub cityInventory()
     'Get Production Dates and Quantities
     Dim inventory As New Collection
     Dim number_units_per_date As Scripting.Dictionary
-    Dim prodCount As Integer
+    Dim prodCount As Integer, Key As Variant
     
     i = 7
     For Each Key In product_names.Keys()
@@ -612,7 +613,7 @@ Private Sub cityInventory()
     Next Key
     '**************************************************************************
     'Output information
-    Dim ws As Worksheet
+    Dim ws As Worksheet, collectionItem As Variant
     Set ws = ActiveWorkbook.Sheets.Add(Before:=Worksheets(1))
     ws.name = "Table"
     j = 1 'to keep track of row to output to
@@ -896,6 +897,7 @@ nextIt:
         newSheet.Cells(i + 1, 5) = data(i)(4)
     Next i
     
+    Dim n As Long
     'TURN INTO TABLE
     n = newSheet.Cells(Rows.Count, 1).End(xlUp).Row
     newSheet.ListObjects.Add(xlSrcRange, Range("$A$1:$E$" & n), , xlYes).name = "Table2"
@@ -946,6 +948,7 @@ End Sub
 'CREATE TABLE WITH DATES
 
 Private Sub DailyInventoryTableDates()
+    Dim n As Long, i As Long
     n = ActiveSheet.Cells(Rows.Count, 1).End(xlUp).Row
     For i = 2 To n
         'if sku cell is empty add N/A
