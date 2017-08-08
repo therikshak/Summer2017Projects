@@ -15,6 +15,7 @@ Sub DailyInventory()
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
+    Print #TextFile, "ADD FILENAMES TO COLLECTION"
     
     'get each file in the folder and store into collection
     Do While Len(file) > 0
@@ -46,6 +47,8 @@ Sub DailyInventory()
     Dim i As Long, lengthMaster As Long, lengthGet As Long
     Set shtMaster = ActiveWorkbook.ActiveSheet
     
+    Print #TextFile, "*********************************************"
+    Print #TextFile, "LOOP THROUGH FILENAMES AND CALL CORRECT MACRO"
     For i = 1 To file_names.Count
         'open the excel file
         On Error Resume Next
@@ -115,6 +118,10 @@ failed_open:
     sku = ""
     prod8 = ""
     name = ""
+    
+    Print #TextFile, "*********************************************"
+    Print #TextFile, "ADD SHIPBY, AX AND PROD8 NUMBERS"
+    
     'Loop through shtMaster
     n = shtMaster.Cells(Rows.Count, 1).End(xlUp).Row
     For i = 2 To n
@@ -251,6 +258,8 @@ foundShipBy:
     Next i
     
     'ADD PRODUCT DESCRIPTION
+    Print #TextFile, "*********************************************"
+    Print #TextFile, "ADD PRODUCT DESCRIPTIONS"
     For i = 2 To n
         ax_number = shtMaster.Cells(i, 2).Value
         prod8 = shtMaster.Cells(i, 3).Value
@@ -287,7 +296,7 @@ default:
     Set wkb_product_information = Nothing
     Set wkbGet = Nothing
     
-    Print #TextFile, "create table with dates"
+    Print #TextFile, "CREATE TABLE WITH DATES"
     'create table with dates
     DailyInventoryTableDates
     
@@ -308,9 +317,10 @@ default:
     End With
     
     'create minimal table without dates
-    Print #TextFile, "calling no dates sub"
+    Print #TextFile, "CREATE TABLE WITH NO DATES"
     DailyInventoryNoDates
-    Print #TextFile, "no dates sub finished"
+    
+    Print #TextFile, "COMPLETE"
 Close TextFile
 End Sub
 
