@@ -48,7 +48,13 @@ Sub DailyInventory()
     
     For i = 1 To file_names.Count
         'open the excel file
+        On Error Resume Next
         Set wkbGet = Workbooks.Open(path & file_names(i))
+        If Err.Number <> 0 Then
+            Print #TextFile, "failed to open: " & file_names(i)
+            GoTo failed_open
+        End If
+        On Error GoTo 0
         Set shtGet = wkbGet.Sheets(1)
         
         'run correct macro and create table in workbook
@@ -87,6 +93,7 @@ Sub DailyInventory()
         End If
         Print #TextFile, "copied file: " & file_names(i) & " to master"
         wkbGet.Close (False)
+failed_open:
     Next i
 
 '***********************************************************************************
@@ -309,7 +316,7 @@ End Sub
 
 '**************************************************************************
 'SADDLECREEK
-'if boolean modesto is true, then 1 year needs to be subtracted from the dates
+'if boolean modesto is true, then 1 year needs to be subtracted from the production dates
 Private Sub SaddlecreekInventory(ByVal Modesto As Boolean)
     'Arrays to be filled with data
     Dim item_array() As String, item_array_size As Integer
