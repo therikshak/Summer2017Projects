@@ -21,8 +21,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.Navigate(url)
 	WinMaximize, A ;maximize the browser
 	; wait until the page loads
-	While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
-		Sleep 2
+	Sleep, 7000
+	; below code does not work on every computer for some reason, but is most efficient
+	; While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
+		;Sleep 2
 
 ;--------------------PROCESS TO GET ORDERS POPULATED-----------------------
 ; Checks "Ship Date Range from" box, skip if production month is desired
@@ -53,8 +55,9 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementsByClassName("AppButton")[0].focus()
 	Send {Enter}
 ;Wait for page to reload
-	While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
-		Sleep 10
+	Sleep, 7000
+	;While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
+		;Sleep 10
 
 ;--------------------GET DATA INTO EXCEL--------------------------
 ; copy the page
@@ -146,7 +149,6 @@ return
 ;--------------------------------------------------------------------------------
 	
 ;--------------------------PRINT THE CURRENT PAGE--------------------------------
-; Takes in coordinates of the middle of the screen
 printPage()
 {
 ; Call print command

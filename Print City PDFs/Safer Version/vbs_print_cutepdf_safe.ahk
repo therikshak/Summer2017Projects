@@ -10,7 +10,7 @@ CoordMode,Pixel,Screen     ;Initial state is Relative. Frustration awaits if you
 MouseMove, 0, 0, 0         ;Prevents the status bar from showing a mouse-hover link instead of "Done". (We need to move the mouse out of the way _before_ we go to a webpage.)
 
 ;------------------User SetUp-------------------------------------------------
-InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Corresponding Number `r 10: City `r 18: Latrobe `r 28: BCB
+InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Corresponding Number `r 10: City/La Crosse `r 18: Latrobe `r 28: BCB
 
 ;------------------INSTANIATE INTERNET EXPLORER SESSION-----------------------
 ;URL
@@ -21,8 +21,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.Navigate(url)
 	WinMaximize, A ;maximize the browser
 	; wait until the page loads
-	While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
-		Sleep 2
+	Sleep, 5000
+	; below code does not work on every computer for some reason, but is most efficient
+	; While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
+		;Sleep 2
 
 ;--------------------PROCESS TO GET ORDERS POPULATED-----------------------
 ; Checks "Ship Date Range from" box, skip if production month is desired
@@ -30,17 +32,18 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementById(idShipDate).click()
 	Sleep, 10
 
-;---------------------Enter ship date range----------------------------------
-	InputBox, startDate, Start, "Start Date? `r Enter Date in mm/dd/yyyy format
-	Send {Tab 46}
-	Sleep 20
-	Send %startDate%
-	Sleep 20
-	
-	InputBox, endDate, End, "End Date? `r Enter Date in mm/dd/yyyy format
-	Send {Tab}
-	Send %endDate%
-	Sleep 20
+;----------------Code below allows user to enter ship date range, but this is unneeded--------------------
+		;InputBox, startDate, Start, "Start Date? `r Enter Date in mm/dd/yyyy format
+		;Send {Tab 46}
+		;Sleep 20
+		;Send %startDate%
+		;Sleep 20
+		
+		;InputBox, endDate, End, "End Date? `r Enter Date in mm/dd/yyyy format
+		;Send {Tab}
+		;Send %endDate%
+		;Sleep 20
+;------------------------------------------------------------------------------
 
 ; Selects Plant: 10 for City, 18 for Latrobe, 28 for BCB
 	wb.document.all.ctl00_PageBodyContentPlaceHolder_ddlPlant.value := plantCode
@@ -53,11 +56,13 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementsByClassName("AppButton")[0].focus()
 	Send {Enter}
 ;Wait for page to reload
-	While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
-		Sleep 10
+	Sleep, 5000
+	;While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
+		;Sleep 10
 
 ;--------------------GET DATA INTO EXCEL--------------------------
 ; copy the page
+	Sleep, 8000
 	Send ^a
 	Sleep, 10
 	Send ^c
@@ -151,7 +156,7 @@ printPage()
 	WinWait, ahk_class Internet Explorer_TridentDlgFrame
 	Sleep, 5
 	Send ^p
-	WinWait, ahk_class #32770 
+	WinWait, ahk_class #32770, Print 
 ; Press Enter to confirm print to PDF
 	Sleep, 20
 	Send {Enter}
