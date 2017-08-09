@@ -1,0 +1,9 @@
+1. Shipments by wholesaler by size (1/2, 1/6)
+
+2. what deposits we are holding if any? (ideal world = 0)
+	GK doesn't have records for all kegs shipped, and did
+	not invoice Pabst for kegs that actuall shipped/
+
+	Pabst has money sitting in account somewhere
+
+3. See GK spend by invoice w/ detail
