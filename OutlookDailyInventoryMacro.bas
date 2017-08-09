@@ -1,6 +1,4 @@
 Attribute VB_Name = "CreateInventoryReportOutlook"
-Option Explicit
-
 Public Sub completeDailyInventory()
     '********************* SET UP LOGGING AND SAVE FOLDER ************************
     Dim username As String, saveFolder As String, logPath As String, TextFile As Integer
