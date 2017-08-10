@@ -10,7 +10,7 @@ CoordMode,Pixel,Screen     ;Initial state is Relative. Frustration awaits if you
 MouseMove, 0, 0, 0         ;Prevents the status bar from showing a mouse-hover link instead of "Done". (We need to move the mouse out of the way _before_ we go to a webpage.)
 
 ;------------------User SetUp-------------------------------------------------
-InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Corresponding Number `r 10: City/La Crosse `r 18: Latrobe `r 28: BCB
+InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Corresponding Number `r 10: City `r 18: Latrobe `r 28: BCB
 
 ;------------------INSTANIATE INTERNET EXPLORER SESSION-----------------------
 ;URL
@@ -29,8 +29,6 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	idShipDate := "ctl00_PageBodyContentPlaceHolder_rbShipDate"
 	wb.document.getElementById(idShipDate).click()
 	Sleep, 10
-
-;------------------------------------------------------------------------------
 
 ; Selects Plant: 10 for City, 18 for Latrobe, 28 for BCB
 	wb.document.all.ctl00_PageBodyContentPlaceHolder_ddlPlant.value := plantCode
@@ -70,9 +68,9 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	Sleep, 25
 
 ; Switch back to IE
-	Send, !{Esc}
+	Send !{Esc}
 	Sleep, 15
-
+	
 ;----------------Print first PDF separately------------------
 ; Tab to first "View" link
 	Send ^f
@@ -113,7 +111,7 @@ Loop
 			ExitApp
 		}
 	; Switch back to IE
-		Send, !{Esc}
+		Send !{Esc}
 		Sleep, 15
 	; Tab to "View" link
 		Send {Tab 7}
@@ -145,18 +143,19 @@ printPage()
 ; Press Enter to confirm print to PDF
 	Sleep, 20
 	Send {Enter}
-	Sleep, 40
+	WinWait, doPDF8 - Save PDF file, ,1.5
 	IfWinActive, ahk_class Internet Explorer_TridentDlgFrame
 	{
 		Sleep, 100
-		WinActivate, Save As
+		WinActivate, doPDF8 - Save PDF file
 	}
-	WinWait, Save As, ,1.5
+	WinWait, doPDF8 - Save PDF file, ,1.5
 	if ErrorLevel{
-		WinActivate, Save As
+		WinActivate, doPDF8 - Save PDF file
 	}
 ; Write in Order Number as filename
-	Send {Tab 5}
+	fileloc := "C:\Users\agrundy\Desktop\"
+	Send %fileloc%
 	Sleep, 10
 	Send ^v
 	Sleep, 50
