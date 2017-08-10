@@ -8,6 +8,7 @@ Public Sub completeDailyInventory()
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
+    
     '*********************** Report Run *********************************
     Dim alreadyRan As Boolean
     Print #TextFile, "checking to see if report has been run"
@@ -31,12 +32,6 @@ Public Sub completeDailyInventory()
     'delete everything in sharepoint folder except Product Information
     DeleteReports
     Print #TextFile, "After DeleteReports"
-    'exit macro if already run
-    If alreadyRan Then
-       Print #TextFile, "alreadyRan Boolean is True and caused exit"
-       Close TextFile
-       Exit Sub
-    End If
     
     '******************* DOWNLOAD REPORTS FROM EMAILS *********************
     Print #TextFile, "Before DownloadReports"
@@ -45,8 +40,7 @@ Public Sub completeDailyInventory()
     successfulDownload = DownloadReports
     If Not successfulDownload Then
         Print #TextFile, "did not download any reports"
-        Close TextFile
-        Exit Sub
+        GoTo move_old_skip
     End If
     
     '***************************** LINDNER ********************************
@@ -56,6 +50,7 @@ Public Sub completeDailyInventory()
     Set wsh = VBA.CreateObject("Wscript.Shell")
     On Error GoTo failed_lindner
     x = wsh.Run("cmd /c C:\Users\" & username & "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
+    Set wsh = Nothing
     moveLinder
 failed_lindner:
     Print #TextFile, "After Lindner Call"
@@ -75,6 +70,7 @@ failed_lindner:
     End If
       
     '******************* MOVE OLD REPORT EMAILS ********************
+move_old_skip:
     moveOld
     Print #TextFile, "moveOld called"
     Close TextFile
@@ -211,7 +207,7 @@ Private Function DownloadReports() As Boolean
             ' IF FROM NEW HOLLAND
             If sender = "payables@newhollandbrew.com" Then
             ' check if this is the correct email and export to excel if so otherwise the email will be skipped
-                If Not (goodEmail(recDay, recMonth, True)) Then
+                If (goodEmail(recDay, recMonth, True)) Then
                     ' report comes as text in the body of the email so it needs to be put into an excel file
                     exportToExcel Item, saveFolder
                     Print #TextFile, "saved: " & sender
@@ -222,7 +218,7 @@ Private Function DownloadReports() As Boolean
             ' if not New Holland then get the attachments
             Else
                 ' first check if the email is from today, otherwise skip it
-                If Not (goodEmail(recDay, recMonth, False)) Then
+                If (goodEmail(recDay, recMonth, False)) Then
                     ' SAVE ATTACHMENTS
                     Set attachments = Item.attachments
                     attachmentCount = attachments.Count
@@ -443,21 +439,37 @@ Private Sub moveOld()
     Dim myInbox As Outlook.folder
     Dim myDestFolder As Outlook.folder
     Dim reportFolder As Outlook.folder
+    Dim recMonth As String, recDay As String, dateReceived As String
 
     Set myNameSpace = Application.GetNamespace("MAPI")
     Set myInbox = myNameSpace.GetDefaultFolder(olFolderInbox)
     Set myDestFolder = myInbox.Folders("Old Inventory Reports")
     Set reportFolder = myInbox.Folders("Inventory Reports Macro")
     
+    Dim iteration_count As Integer
+    iteration_count = 0
     ' loop through each email in the Inventory Reports Macro folder
-    ' and move to the Old Inventory Reports folder
-    While reportFolder.items.Count > 0
-        For Each Item In reportFolder.items
-            If Item.Class = olMail Then
-                Item.Move myDestFolder
+    ' and move yesterday's to the old folder
+    For Each Item In reportFolder.items
+        If Item.Class = olMail Then
+            dateReceived = Item.ReceivedTime
+            recMonth = month(dateReceived)
+            recDay = day(dateReceived)
+        ' IF FROM NEW HOLLAND
+            If sender = "payables@newhollandbrew.com" Then
+            ' check if this is the correct email and export to excel if so otherwise the email will be skipped
+                If Not (goodEmail(recDay, recMonth, True)) Then
+                    Item.Move myDestFolder
+                End If
+            Else
+                ' first check if the email is not from today, otherwise skip it
+                If Not (goodEmail(recDay, recMonth, False)) Then
+                    Item.Move myDestFolder
+                End If
             End If
-        Next Item
-    Wend
+        End If
+        iteration_count = iteration_count + 1
+    Next Item
 End Sub
 
 'On start up create an appointment to trigger the inventory report to run
@@ -477,7 +489,7 @@ Private Sub Application_Reminder(ByVal Item As Object)
       Exit Sub
     End If
      
-    ' Call the macro here
+    ' Call macro to run
     completeDailyInventory
     
     'Delete Appt from calendar when finished
@@ -502,7 +514,7 @@ End Sub
 Public Sub CreateAppointment()
     Dim objAppointment As Outlook.AppointmentItem
     Dim tDate As Date
-    tDate = Now() + 1 / 1440
+    tDate = Now() + 2 / 1440
     
     Set objAppointment = Application.CreateItem(olAppointmentItem)
           With objAppointment
