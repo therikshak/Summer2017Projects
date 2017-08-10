@@ -8,12 +8,28 @@ Public Sub completeDailyInventory()
     TextFile = FreeFile
     Open logPath For Output As TextFile
     Print #TextFile, Now
-
+    '*********************** Report Run *********************************
+    Dim alreadyRan As Boolean
+    Print #TextFile, "checking to see if report has been run"
+    Dim question As String, answer As Variant
+    alreadyRan = ReportRun
+    If alreadyRan Then
+        question = "It looks like the Inventory Report has been run today, would you like to rerun it?"
+        answer = MsgBox(question, vbYesNo)
+        Select Case answer
+        Case vbYes
+            'continue with execution
+            Print #TextFile, "user elected to rerun"
+        Case vbNo
+            Print #TextFile, "user elected to not rerun"
+            Close TextFile
+            Exit Sub
+        End Select
+    End If
     '********************* DELETE FILES IN FOLDER ************************
     Print #TextFile, "Before DeleteReports"
     'delete everything in sharepoint folder except Product Information
-    Dim alreadyRan As Boolean
-    alreadyRan = DeleteReports
+    DeleteReports
     Print #TextFile, "After DeleteReports"
     'exit macro if already run
     If alreadyRan Then
@@ -38,10 +54,13 @@ Public Sub completeDailyInventory()
     'Run Script to get Lindner inventory, this saves to Documents
     Dim wsh As Object, x As Integer
     Set wsh = VBA.CreateObject("Wscript.Shell")
+    On Error GoTo failed_lindner
     x = wsh.Run("cmd /c C:\Users\" & username & "\Desktop\Lindner_Scrape\build\exe.win32-3.6\Scrape.exe", 1, True)
     moveLinder
+failed_lindner:
     Print #TextFile, "After Lindner Call"
     
+    On Error GoTo 0
     '************************** CREATE TABLE ******************************
     'create new excel workbook in sharepoint folder and run Daily Inventory Macro
     'to create the pivot table
@@ -61,33 +80,50 @@ Public Sub completeDailyInventory()
     Close TextFile
 End Sub
 
-'delete the old reports
-Private Function DeleteReports() As Boolean
+' check if report has been run already
+Private Function ReportRun() As Boolean
     Dim path As String
     Dim username As String, file As Variant
     username = (Environ$("Username"))
     'path to the folder
     path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
-    
     ' get todays date
     Dim todayDate As Date, m As String, d As String, y As String, combinedDate As String
     todayDate = DateValue(Date)
     m = month(todayDate)
     d = day(todayDate)
-    y = year(todayDate)
-    combinedDate = (m & "_" & d & "_" & y)
+    combinedDate = (m & "_" & d)
+    
+    file = Dir(path)
+    'loop through all files in folder
+    Do While Len(file) > 0
+        If InStr(1, file, combinedDate) > 0 Then
+            'exit sub and pass true back to the variable already ran
+            ReportRun = True
+            Exit Function
+        Else
+            'skip file
+        End If
+        'get next file
+        file = Dir
+    Loop
+    ' pass false back to the variable already ran
+    ReportRun = False
+End Function
+
+'delete the old reports
+Private Sub DeleteReports()
+    Dim path As String
+    Dim username As String, file As Variant
+    username = (Environ$("Username"))
+    'path to the folder
+    path = "C:\Users\" & username & "\SharePoint\T\Projects\InventoryReports\"
 
     file = Dir(path)
     'loop through all files in folder
     Do While Len(file) > 0
         If InStr(1, file, "ProductInformation") > 0 Then
             'skip the product information file
-        ElseIf InStr(1, file, combinedDate) > 0 Then
-            'skip deleting report if it is today's and macro was run again
-            'exit macro as it will cause an error
-            ' pass true back to the variable already ran
-            DeleteReports = True
-            Exit Function
         ElseIf InStr(1, file, "General") > 0 Then
             ' skip deleting the general log
         Else
@@ -97,10 +133,7 @@ Private Function DeleteReports() As Boolean
         'get next file
         file = Dir
     Loop
-    ' pass false back to the variable already ran
-    DeleteReports = False
-    Exit Function
-End Function
+End Sub
 
 ' move the lindner csv to the sharepoint folder
 Private Sub moveLinder()
