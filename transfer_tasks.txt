@@ -1,4 +1,0 @@
--Check that CreateAppointment is not commented out
--Check to see that Lindner is working
-   -will need to change the path
--run the report and make sure it finishes
