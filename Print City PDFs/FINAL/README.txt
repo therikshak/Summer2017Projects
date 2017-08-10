@@ -20,3 +20,9 @@ Instructions for Using the PDF Script
    numbers from, and then begin switching back and forth printing orders and copying
    order numbers. When the script is finished, a message box saying "Complete" will 
    pop up.
+
+Areas to Improve:
+   -The script uses sleep commands to wait for two page reloads. There is code for waiting
+    for a page to reload, however, it does not behave consistently across different computers.
+   -By using an AutoHotkey script the computer cannot be used while the script is running. If
+    given more time, I would pursue a python script that uses a library like Selenium webdriver.

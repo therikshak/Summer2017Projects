@@ -32,22 +32,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementById(idShipDate).click()
 	Sleep, 10
 
-;----------------Code below allows user to enter ship date range, but this is unneeded--------------------
-		;InputBox, startDate, Start, "Start Date? `r Enter Date in mm/dd/yyyy format
-		;Send {Tab 46}
-		;Sleep 20
-		;Send %startDate%
-		;Sleep 20
-		
-		;InputBox, endDate, End, "End Date? `r Enter Date in mm/dd/yyyy format
-		;Send {Tab}
-		;Send %endDate%
-		;Sleep 20
 ;------------------------------------------------------------------------------
 
 ; Selects Plant: 10 for City, 18 for Latrobe, 28 for BCB
 	wb.document.all.ctl00_PageBodyContentPlaceHolder_ddlPlant.value := plantCode
-	
 	Sleep, 10
 ; Selects Entered Status
 	wb.document.getElementsByClassName("AppDropDown")[6].focus()
@@ -57,8 +45,6 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	Send {Enter}
 ;Wait for page to reload
 	Sleep, 5000
-	;While	wb.readyState != 4 || wb.document.readyState != "complete" || wb.busy || A_Index < 50
-		;Sleep 10
 
 ;--------------------GET DATA INTO EXCEL--------------------------
 ; copy the page
@@ -86,8 +72,12 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	Sleep, 25
 
 ; Switch back to IE
-	Send !{Tab}
-	Sleep, 100
+	Send #{Tab}
+	Sleep, 60
+	Send {Right}
+	Sleep, 40
+	Send {Enter}
+	Sleep, 250
 
 ;----------------Print first PDF separately------------------
 ; Tab to first "View" link
@@ -109,8 +99,13 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 Loop
 {
 	;Switch to Excel and copy next order number
-		Send !{Tab}
-		Sleep, 50
+		Send #{Tab}
+		Sleep, 60
+		Send {Right}
+		Sleep, 40
+		Send {Enter}
+		Sleep, 250
+		
 		;down to next #
 		Send {Down}
 		Sleep, 5
@@ -128,8 +123,12 @@ Loop
 			ExitApp
 		}
 	; Switch back to IE
-		Send !{Tab}
-		Sleep, 10
+		Send #{Tab}
+		Sleep, 60
+		Send {Right}
+		Sleep, 40
+		Send {Enter}
+		Sleep, 250
 	; Tab to "View" link
 		Send {Tab 7}
 		Sleep, 15
