@@ -40,11 +40,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementsByClassName("AppButton")[0].focus()
 	Send {Enter}
 ;Wait for page to reload
-	Sleep, 5000
+	Sleep, 7000
 
 ;--------------------GET DATA INTO EXCEL--------------------------
 ; copy the page
-	Sleep, 8000
 	Send ^a
 	Sleep, 10
 	Send ^c
@@ -137,26 +136,25 @@ printPage()
 {
 ; Call print command
 	WinWait, ahk_class Internet Explorer_TridentDlgFrame
-	Sleep, 5
+	Sleep, 20
 	Send ^p
 	WinWait, ahk_class #32770, Print 
 ; Press Enter to confirm print to PDF
 	Sleep, 20
 	Send {Enter}
-	WinWait, doPDF8 - Save PDF file, ,1.5
-	IfWinActive, ahk_class Internet Explorer_TridentDlgFrame
-	{
-		Sleep, 100
-		WinActivate, doPDF8 - Save PDF file
-	}
-	WinWait, doPDF8 - Save PDF file, ,1.5
-	if ErrorLevel{
-		WinActivate, doPDF8 - Save PDF file
-	}
+	Sleep, 100
+	WinActivate, doPDF8 - Save PDF file
+	Sleep, 20
 ; Write in Order Number as filename
-	fileloc := "C:\Users\agrundy\Desktop\"
+	SetKeyDelay, 70
+	IfWinNotActive, doPDF8 - Save PDF file
+	{
+		WinActivate, doPDF8 - Save PDF file
+	}
+	fileloc := "C:\Users\agrundy\Desktop\PrintingCityPDFs\"
+	Send {Alt down}{Alt up}{Alt down}{Alt up}
 	Send %fileloc%
-	Sleep, 10
+	Sleep, 20
 	Send ^v
 	Sleep, 50
 ; Press Enter to accept filename for PDF

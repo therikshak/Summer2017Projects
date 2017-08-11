@@ -30,18 +30,6 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementById(idShipDate).click()
 	Sleep, 10
 
-;---------------------Enter ship date range----------------------------------
-	InputBox, startDate, Start, "Start Date? `r Enter Date in mm/dd/yyyy format
-	Send {Tab 46}
-	Sleep 20
-	Send %startDate%
-	Sleep 20
-	
-	InputBox, endDate, End, "End Date? `r Enter Date in mm/dd/yyyy format
-	Send {Tab}
-	Send %endDate%
-	Sleep 20
-
 ; Selects Plant: 10 for City, 18 for Latrobe, 28 for BCB
 	wb.document.all.ctl00_PageBodyContentPlaceHolder_ddlPlant.value := plantCode
 	

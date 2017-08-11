@@ -42,11 +42,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	wb.document.getElementsByClassName("AppButton")[0].focus()
 	Send {Enter}
 ;Wait for page to reload
-	Sleep, 5000
+	Sleep, 7000
 
 ;--------------------GET DATA INTO EXCEL--------------------------
 ; copy the page
-	Sleep, 8000
 	Send ^a
 	Sleep, 10
 	Send ^c
@@ -65,9 +64,11 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	
 ; Navigate to A107 and copy first order #
 	XLBook.Range("A107").Select
-	Sleep, 20
+	Sleep, 100
+	clipboard := ""
 	Send ^c
-	Sleep, 25
+	ClipWait
+	Sleep, 15
 
 ; Switch back to IE
 	Send, !{Esc}
@@ -84,9 +85,10 @@ InputBox, plantCode, Plant, Which Plant to Pull Orders From? `r Enter Correspond
 	Send {Tab 5}
 	Sleep, 5
 	Send {Enter}
-	Sleep, 10
+	Sleep, 30
 	; print first link
-	printPage()
+	printPage(clipboard)
+	Sleep, 50
 
 
 ;------------------------LOOP THROUGH ALL ORDERS---------------------------------
@@ -102,6 +104,7 @@ Loop
 		clipboard := ""
 		Send ^c
 		ClipWait
+		Sleep, 20
 		if(clipboard = "© Pabst Brewing Company 2017, All Rights Reserved`r`n")
 		{
 			Send !{F4}
@@ -120,7 +123,7 @@ Loop
 		Sleep, 15
 		Send {Enter}
 		Sleep, 50
-		printPage()
+		printPage(clipboard)
 		Sleep, 50
 }
 ---------------------------------------------------------------------------------
@@ -135,33 +138,28 @@ return
 ;--------------------------------------------------------------------------------
 	
 ;--------------------------PRINT THE CURRENT PAGE--------------------------------
-printPage()
+printPage(order_number)
 {
 ; Call print command
 	WinWait, ahk_class Internet Explorer_TridentDlgFrame
-	Sleep, 5
+	Sleep, 100
 	Send ^p
 	WinWait, ahk_class #32770, Print 
 ; Press Enter to confirm print to PDF
 	Sleep, 20
 	Send {Enter}
-	Sleep, 40
-	IfWinActive, ahk_class Internet Explorer_TridentDlgFrame
-	{
-		Sleep, 100
-		WinActivate, Save As
-	}
+	Sleep, 10
 	WinWait, Save As, ,1.5
 	if ErrorLevel{
-		WinActivate, Save As
+		Sleep, 200
 	}
 ; Write in Order Number as filename
-	Send {Tab 5}
-	Sleep, 10
-	Send ^v
-	Sleep, 50
+	Sleep, 100
+	SetKeyDelay, 100
+	ControlSend, Edit1, {Alt down}{Alt up}%order_number%, ahk_class #32770, Save
 ; Press Enter to accept filename for PDF
-	Send {Enter}
+	Sleep, 3000
+	ControlClick, Button2, ahk_class #32770, Save, LEFT, 1
 	Sleep, 100
 ; Check if File already exists, defaults to not saving it
 	IfWinActive, Confirm Save As
@@ -170,7 +168,12 @@ printPage()
 		WinWait, Save As				
 		Send !{F4}
 		WinWaitNotActive, Save As
-	}					
+	}
+	IfWinActive, Save As
+	{
+		WinWaitNotActive, Save As
+	}
+	Sleep, 10
 ; Activate order window
 	WinActivate, ahk_class Internet Explorer_TridentDlgFrame
 	Sleep, 50
